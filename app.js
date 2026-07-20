@@ -4,11 +4,14 @@ function demoWav(notes){
   for(let i=0;i<n;i++){const j=Math.min(notes.length-1,Math.floor(i/spn)),q=i%spn,f=notes[j],e=Math.max(0,Math.min(1,q/(sr*.03),(spn-q)/(sr*.12))),t=i/sr,x=(Math.sin(2*Math.PI*f*t)*.65+Math.sin(4*Math.PI*f*t)*.18)*e;v.setUint8(44+i,Math.max(0,Math.min(255,Math.round(128+x*95))))}
   return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));
 }
+const R2='https://pub-e59b6e32dca34106a263ace064f23dcf.r2.dev',PREFIX='pine-music',MANIFEST=`${R2}/${PREFIX}/songs.json`;
 const baseTracks=[
   {title:'夜行列车',artist:'Pine Studio',src:demoWav([261.63,329.63,392,329.63,440,392,329.63,293.66]),cover:'cover-purple',durationLabel:'00:08',genre:'轻音乐'},
   {title:'暖色落日',artist:'Chyan Waves',src:demoWav([440,329.63,392,329.63,293.66,329.63,392,440]),cover:'cover-sunset',durationLabel:'00:08',genre:'流行'},
   {title:'城市灯火',artist:'Pine Studio',src:demoWav([329.63,392,493.88,392,329.63,293.66,329.63,392]),cover:'cover-blue',durationLabel:'00:08',genre:'电子'}
 ];
+function remoteTrack(x,i){if(!x||!x.title||!(x.file||x.src))return null;const v=x.file||x.src,k=v.replace(/^\/+/,''),src=/^https?:\/\//i.test(v)?v:`${R2}/${k.startsWith(PREFIX+'/')?k:PREFIX+'/'+k}`;return{title:x.title,artist:x.artist||'未知歌手',src,cover:x.cover||['cover-purple','cover-sunset','cover-blue'][i%3],durationLabel:x.duration||x.durationLabel||'--:--',genre:x.genre||'云端音乐'}}
+async function syncCloud(){try{const r=await fetch(`${MANIFEST}?v=${Date.now()}`,{cache:'no-store'});if(!r.ok)throw Error(r.status);const j=await r.json(),a=Array.isArray(j)?j:j.songs,b=Array.isArray(a)?a.map(remoteTrack).filter(Boolean):[];if(!b.length)throw Error('empty');tracks=b;index=0;load(0);renderSongs($('#searchInput').value);renderQueue();toast(`已同步 ${tracks.length} 首云端音乐`)}catch(e){console.warn('Cloud music sync failed',e)}}
 const playlists=[['流行音乐榜','392.6万','cover-1'],['热歌榜','287.4万','cover-2'],['新歌速递','152.3万','cover-3'],['夜行电子','312.8万','cover-4'],['KTV必点榜','226.7万','cover-5'],['网络热歌榜','185.4万','cover-6']];
 const $=s=>document.querySelector(s),audio=$('#audio');let tracks=[...baseTracks],index=0,shuffle=false,repeat=false,liked=false;
 const fmt=s=>Number.isFinite(s)?`${Math.floor(s/60).toString().padStart(2,'0')}:${Math.floor(s%60).toString().padStart(2,'0')}`:'00:00';
@@ -29,4 +32,4 @@ $('#muteBtn').onclick=()=>{audio.muted=!audio.muted;$('#muteBtn').textContent=au
 $('#searchInput').oninput=e=>{renderSongs(e.target.value);renderLists(e.target.value)};document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#searchInput').focus()}else if(e.code==='Space'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();toggle()}});
 document.querySelectorAll('.main-nav .nav-item').forEach(b=>b.onclick=()=>{document.querySelectorAll('.main-nav .nav-item').forEach(x=>x.classList.remove('active'));b.classList.add('active');toast('已切换到：'+b.dataset.section)});document.querySelectorAll('#genreTabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#genreTabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');toast('流派：'+b.textContent)});
 $('#filePicker').onchange=e=>{[...e.target.files].forEach((f,i)=>tracks.push({title:f.name.replace(/\.[^/.]+$/,''),artist:'本地音乐',src:URL.createObjectURL(f),cover:['cover-purple','cover-sunset','cover-blue'][i%3],durationLabel:'本地',genre:'本地音乐'}));renderSongs($('#searchInput').value);renderQueue();toast(`已导入 ${e.target.files.length} 首本地音乐`)};
-load(0);renderSongs();renderLists();renderQueue();
+load(0);renderSongs();renderLists();renderQueue();syncCloud();
