@@ -26,8 +26,8 @@
       <nav class="sub-nav">
         <button class="nav-item"><span>♡</span>我喜欢的音乐</button>
         <button class="nav-item"><span>◷</span>最近播放</button>
-        <label class="nav-item upload-entry" for="filePicker"><span>⇧</span>导入本地音乐</label>
-        <input id="filePicker" type="file" accept="audio/*" multiple hidden />
+        <label class="nav-item upload-entry" for="filePicker"><span>⇧</span>上传云端音乐</label>
+        <input id="filePicker" type="file" accept="audio/mpeg,audio/mp4,audio/wav,audio/ogg,audio/aac,audio/flac,.mp3,.m4a,.wav,.ogg,.aac,.flac" multiple hidden />
       </nav>
       <div class="sidebar-title playlist-title">
         创建的歌单 <button id="newPlaylist" aria-label="新建歌单">＋</button>
@@ -122,6 +122,6 @@
   </div>
   <audio id="audio"></audio>
   <div id="toast" class="toast"></div>
-  <script src="app.js"></script>
+  <script src="app.js?v=20260720-3"></script>
 </body>
 </html>
