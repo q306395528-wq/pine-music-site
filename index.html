@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0d14" />
+  <title>Pine Music · 在线音乐</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">♪</div>
+        <strong>Pine Music</strong>
+      </div>
+      <nav class="main-nav">
+        <button class="nav-item active" data-section="发现"><span>◉</span>发现</button>
+        <button class="nav-item" data-section="推荐"><span>☆</span>推荐</button>
+        <button class="nav-item" data-section="排行榜"><span>▥</span>排行榜</button>
+        <button class="nav-item" data-section="歌单"><span>▣</span>歌单</button>
+        <button class="nav-item" data-section="歌手"><span>♙</span>歌手</button>
+        <button class="nav-item" data-section="专辑"><span>◎</span>专辑</button>
+      </nav>
+      <div class="sidebar-title">我的音乐</div>
+      <nav class="sub-nav">
+        <button class="nav-item"><span>♡</span>我喜欢的音乐</button>
+        <button class="nav-item"><span>◷</span>最近播放</button>
+        <label class="nav-item upload-entry" for="filePicker"><span>⇧</span>导入本地音乐</label>
+        <input id="filePicker" type="file" accept="audio/*" multiple hidden />
+      </nav>
+      <div class="sidebar-title playlist-title">
+        创建的歌单 <button id="newPlaylist" aria-label="新建歌单">＋</button>
+      </div>
+      <div class="mini-playlists">
+        <button><span class="mini-cover warm"></span>每日好歌</button>
+        <button><span class="mini-cover blue"></span>工作学习</button>
+        <button><span class="mini-cover pink"></span>放松时刻</button>
+      </div>
+    </aside>
+    <main class="content">
+      <header class="topbar">
+        <div class="history-buttons">
+          <button aria-label="后退">‹</button>
+          <button aria-label="前进">›</button>
+        </div>
+        <div class="search-box">
+          <span>⌕</span>
+          <input id="searchInput" placeholder="搜索歌曲、歌手、专辑、歌单" />
+          <kbd>⌘ K</kbd>
+        </div>
+        <button class="membership">♛ 升级会员</button>
+        <button class="avatar">P</button>
+      </header>
+      <section class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow">PINE MUSIC RADIO</span>
+          <h1>听见 · 好时光</h1>
+          <p>发现属于你的音乐宇宙，收藏每一段情绪。</p>
+          <div class="hero-actions">
+            <button class="primary" id="heroPlay">▶ 立即播放</button>
+            <button class="ghost" id="shuffleAll">随机播放</button>
+          </div>
+        </div>
+        <div class="hero-art">
+          <div class="orb orb-1"></div>
+          <div class="orb orb-2"></div>
+          <div class="vinyl"><div class="vinyl-center"></div></div>
+          <div class="hero-person">♫</div>
+        </div>
+        <div class="hero-dots"><i></i><i class="active"></i><i></i></div>
+      </section>
+      <section class="section">
+        <div class="section-head">
+          <div><span class="section-kicker">FOR YOU</span><h2>为你推荐</h2></div>
+          <button class="link-button">查看全部 ›</button>
+        </div>
+        <div id="recommendGrid" class="recommend-grid"></div>
+      </section>
+      <section class="section">
+        <div class="section-head split">
+          <div><span class="section-kicker">TRENDING</span><h2>热门歌单</h2></div>
+          <div class="genre-tabs" id="genreTabs">
+            <button class="active">全部流派</button><button>流行</button><button>摇滚</button><button>民谣</button><button>电子</button><button>轻音乐</button>
+          </div>
+        </div>
+        <div id="playlistGrid" class="playlist-grid"></div>
+      </section>
+    </main>
+    <aside class="queue-panel">
+      <div class="queue-top"><button class="bell">♧<span></span></button><div class="queue-profile">PC</div></div>
+      <div class="now-title">正在播放</div>
+      <div id="sideCover" class="side-cover cover-purple"><div class="moon">◔</div></div>
+      <div class="side-track-row">
+        <div><h3 id="sideTitle">夜行列车</h3><p id="sideArtist">Pine Studio</p></div>
+        <button id="heartBtn" class="heart">♥</button>
+      </div>
+      <div class="side-progress">
+        <div class="progress-track"><span id="sideProgressFill"></span></div>
+        <div class="time-row"><span id="sideCurrent">00:00</span><span id="sideDuration">00:00</span></div>
+      </div>
+      <div class="side-controls">
+        <button id="sideShuffle">⤨</button><button id="sidePrev">|◀</button><button id="sidePlay" class="side-play">▶</button><button id="sideNext">▶|</button><button id="sideRepeat">↻</button>
+      </div>
+      <div class="queue-header"><strong>播放列表 <span id="queueCount">3</span></strong><button id="clearQueue">清空</button></div>
+      <div id="queueList" class="queue-list"></div>
+    </aside>
+    <footer class="player">
+      <div class="player-song">
+        <div id="bottomCover" class="bottom-cover cover-purple"></div>
+        <div class="player-song-text"><strong id="bottomTitle">夜行列车</strong><span id="bottomArtist">Pine Studio</span></div>
+        <button id="bottomHeart" class="bottom-heart">♡</button><button class="more">•••</button>
+      </div>
+      <div class="player-center">
+        <div class="player-buttons">
+          <button id="shuffleBtn">⤨</button><button id="prevBtn">|◀</button><button id="playBtn" class="main-play">▶</button><button id="nextBtn">▶|</button><button id="repeatBtn">↻</button>
+        </div>
+        <div class="bottom-progress-wrap"><span id="currentTime">00:00</span><input id="progressBar" type="range" min="0" max="100" value="0" /><span id="durationTime">00:00</span></div>
+      </div>
+      <div class="player-extra"><button id="muteBtn">◖</button><input id="volumeBar" type="range" min="0" max="1" step="0.01" value="0.72" /><button id="queueToggle">☷</button></div>
+    </footer>
+  </div>
+  <audio id="audio"></audio>
+  <div id="toast" class="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
