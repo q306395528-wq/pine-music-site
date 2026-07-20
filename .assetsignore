@@ -1,0 +1,9 @@
+node_modules/
+.git/
+.github/
+package.json
+package-lock.json
+wrangler.jsonc
+README.md
+deploy-trigger.txt
+songs.example.json
