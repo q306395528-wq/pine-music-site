@@ -1,6 +1,7 @@
 node_modules/
 .git/
 .github/
+src/
 package.json
 package-lock.json
 wrangler.jsonc
