@@ -175,6 +175,13 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    if (url.pathname === "/api/status" && request.method === "GET") {
+      return json({
+        ok: true,
+        uploadPasswordConfigured: Boolean(env.UPLOAD_PASSWORD),
+        musicBucketConfigured: Boolean(env.MUSIC_BUCKET),
+      });
+    }
     if (url.pathname === "/api/songs" && request.method === "GET") {
       return json({ songs: await listSongs(env) });
     }
