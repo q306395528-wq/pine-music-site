@@ -1,0 +1,20 @@
+{
+  "songs": [
+    {
+      "title": "歌曲名称",
+      "artist": "歌手名称",
+      "file": "song-01.mp3",
+      "genre": "流行",
+      "duration": "03:45",
+      "cover": "cover-purple"
+    },
+    {
+      "title": "第二首歌",
+      "artist": "歌手名称",
+      "file": "song-02.mp3",
+      "genre": "轻音乐",
+      "duration": "04:12",
+      "cover": "cover-sunset"
+    }
+  ]
+}
