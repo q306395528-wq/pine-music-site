@@ -6,9 +6,9 @@ function demoWav(notes){
 }
 const R2='https://pub-e59b6e32dca34106a263ace064f23dcf.r2.dev',PREFIX='pine-music',MANIFESTS=[`${R2}/${PREFIX}/songs.json`,`${R2}/${PREFIX}/song.json`];
 const baseTracks=[
-  {title:'夜行列车',artist:'Pine Studio',src:demoWav([261.63,329.63,392,329.63,440,392,329.63,293.66]),cover:'cover-purple',durationLabel:'00:08',genre:'轻音乐'},
-  {title:'暖色落日',artist:'Chyan Waves',src:demoWav([440,329.63,392,329.63,293.66,329.63,392,440]),cover:'cover-sunset',durationLabel:'00:08',genre:'流行'},
-  {title:'城市灯火',artist:'Pine Studio',src:demoWav([329.63,392,493.88,392,329.63,293.66,329.63,392]),cover:'cover-blue',durationLabel:'00:08',genre:'电子'}
+  {title:'BIRDS OF A FEATHER',artist:'Billie Eilish',src:`${R2}/${PREFIX}/billie%20eilish-birds%20of%20a%20feather.mp3`,cover:'cover-purple',durationLabel:'03:30',genre:'流行'},
+  {title:'夜行列车',artist:'Pine Studio',src:demoWav([261.63,329.63,392,329.63,440,392,329.63,293.66]),cover:'cover-blue',durationLabel:'00:08',genre:'轻音乐'},
+  {title:'暖色落日',artist:'Chyan Waves',src:demoWav([440,329.63,392,329.63,293.66,329.63,392,440]),cover:'cover-sunset',durationLabel:'00:08',genre:'流行'}
 ];
 function remoteTrack(x,i){if(!x||!x.title||!(x.file||x.src))return null;const v=x.file||x.src,k=v.replace(/^\/+/,''),src=/^https?:\/\//i.test(v)?v:`${R2}/${k.startsWith(PREFIX+'/')?k:PREFIX+'/'+k}`;return{title:x.title,artist:x.artist||'未知歌手',src,cover:x.cover||['cover-purple','cover-sunset','cover-blue'][i%3],durationLabel:x.duration||x.durationLabel||'--:--',genre:x.genre||'云端音乐'}}
 async function syncCloud(){for(const url of MANIFESTS){try{const r=await fetch(`${url}?v=${Date.now()}`,{cache:'no-store'});if(!r.ok)continue;const j=await r.json(),a=Array.isArray(j)?j:Array.isArray(j.songs)?j.songs:(j.title?[j]:[]),b=a.map(remoteTrack).filter(Boolean);if(!b.length)continue;tracks=b;index=0;load(0);renderSongs($('#searchInput').value);renderQueue();toast(`已同步 ${tracks.length} 首云端音乐`);return}catch(e){console.warn('Cloud music sync failed',url,e)}}console.warn('No valid cloud music manifest found')}
