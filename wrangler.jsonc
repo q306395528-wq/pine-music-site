@@ -13,5 +13,8 @@
       "binding": "MUSIC_BUCKET",
       "bucket_name": "pine-public"
     }
-  ]
+  ],
+  "secrets": {
+    "required": ["UPLOAD_PASSWORD"]
+  }
 }
