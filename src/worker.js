@@ -1,6 +1,7 @@
 const MUSIC_PREFIX = "pine-music/";
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 const AUDIO_EXTENSIONS = new Set(["mp3", "m4a", "wav", "ogg", "aac", "flac"]);
+const LRC_UA = "PineMusic/1.0 (+https://pine-music-site.q306395528.workers.dev)";
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -171,6 +172,49 @@ async function handleMusic(request, env, pathname) {
   return new Response(request.method === "HEAD" ? null : object.body, { status, headers });
 }
 
+async function handleCover(url) {
+  const artist = (url.searchParams.get("artist") || "").trim();
+  const title = (url.searchParams.get("title") || "").trim();
+  if (!title) return json({ cover: null });
+  const term = encodeURIComponent(`${artist} ${title}`.trim());
+  try {
+    const res = await fetch(`https://itunes.apple.com/search?term=${term}&entity=song&limit=1&country=US`, {
+      headers: { accept: "application/json", "user-agent": LRC_UA },
+      cf: { cacheTtl: 604800, cacheEverything: true },
+    });
+    if (!res.ok) return json({ cover: null });
+    const data = await res.json();
+    const art = data && data.results && data.results[0] && data.results[0].artworkUrl100;
+    return json({ cover: art ? art.replace(/\/\d+x\d+bb\.(jpg|png)$/i, "/600x600bb.$1") : null });
+  } catch {
+    return json({ cover: null });
+  }
+}
+
+async function handleLyrics(url) {
+  const artist = (url.searchParams.get("artist") || "").trim();
+  const title = (url.searchParams.get("title") || "").trim();
+  if (!title) return json({ synced: "", plain: "" });
+  const query = encodeURIComponent(`${title} ${artist}`.trim());
+  try {
+    const res = await fetch(`https://lrclib.net/api/search?q=${query}`, {
+      headers: { accept: "application/json", "user-agent": LRC_UA },
+      cf: { cacheTtl: 604800, cacheEverything: true },
+    });
+    if (!res.ok) return json({ synced: "", plain: "" });
+    const list = await res.json();
+    if (!Array.isArray(list) || !list.length) return json({ synced: "", plain: "" });
+    const withSync = list.find((item) => item && item.syncedLyrics);
+    const withPlain = list.find((item) => item && item.plainLyrics);
+    return json({
+      synced: (withSync && withSync.syncedLyrics) || "",
+      plain: (withSync && withSync.plainLyrics) || (withPlain && withPlain.plainLyrics) || "",
+    });
+  } catch {
+    return json({ synced: "", plain: "" });
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -185,6 +229,12 @@ export default {
     if (url.pathname === "/api/songs" && request.method === "GET") {
       return json({ songs: await listSongs(env) });
     }
+    if (url.pathname === "/api/cover" && request.method === "GET") {
+      return handleCover(url);
+    }
+    if (url.pathname === "/api/lyrics" && request.method === "GET") {
+      return handleLyrics(url);
+    }
     if (url.pathname === "/api/upload" && request.method === "POST") {
       return handleUpload(request, env);
     }
@@ -195,6 +245,16 @@ export default {
       return json({ error: "接口不存在" }, 404);
     }
 
-    return env.ASSETS.fetch(request);
+    // HTML 不缓存，否则用户拿到旧页面、里面的资源版本号也就永远更新不了；
+    // JS/CSS 靠 ?v= 版本号做缓存失效，可以放心长缓存。
+    const response = await env.ASSETS.fetch(request);
+    const type = response.headers.get("content-type") || "";
+    const headers = new Headers(response.headers);
+    if (type.includes("text/html")) {
+      headers.set("cache-control", "no-store");
+    } else if (url.searchParams.has("v")) {
+      headers.set("cache-control", "public, max-age=31536000, immutable");
+    }
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
   },
 };
