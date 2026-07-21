@@ -172,22 +172,45 @@ async function handleMusic(request, env, pathname) {
   return new Response(request.method === "HEAD" ? null : object.body, { status, headers });
 }
 
-async function handleCover(url) {
-  const artist = (url.searchParams.get("artist") || "").trim();
-  const title = (url.searchParams.get("title") || "").trim();
-  if (!title) return json({ cover: null });
-  const term = encodeURIComponent(`${artist} ${title}`.trim());
+// iTunes 从 Worker 出口被限流（429），Deezer 对数据中心 IP 清空数据，
+// 唯有 MusicBrainz 可从 Worker 稳定访问；它的配图在 CoverArtArchive 上，
+// 浏览器能直接加载。这里用 MB 拿到候选 release，返回若干 CAA 封面地址，
+// 由浏览器逐个尝试（没有配图的会 404，跳过即可）。
+async function mbJson(path) {
   try {
-    const res = await fetch(`https://itunes.apple.com/search?term=${term}&entity=song&limit=1&country=US`, {
+    const res = await fetch(`https://musicbrainz.org/ws/2/${path}`, {
       headers: { accept: "application/json", "user-agent": LRC_UA },
       cf: { cacheTtl: 604800, cacheEverything: true },
     });
-    if (!res.ok) return json({ cover: null });
-    const data = await res.json();
-    const art = data && data.results && data.results[0] && data.results[0].artworkUrl100;
-    return json({ cover: art ? art.replace(/\/\d+x\d+bb\.(jpg|png)$/i, "/600x600bb.$1") : null });
+    return res.ok ? await res.json() : null;
   } catch {
-    return json({ cover: null });
+    return null;
+  }
+}
+
+async function handleCover(url) {
+  const artist = (url.searchParams.get("artist") || "").trim();
+  const title = (url.searchParams.get("title") || "").trim();
+  if (!title) return json({ cover: null, candidates: [] });
+  const artistClause = artist ? ` AND artist:"${artist}"` : "";
+  try {
+    // 并行查专辑组(release-group)和录音(recording)。release-group 的 front 命中率更高，排前面。
+    const [rgData, recData] = await Promise.all([
+      mbJson(`release-group/?query=${encodeURIComponent(`releasegroup:"${title}"${artistClause}`)}&fmt=json&limit=8`),
+      mbJson(`recording/?query=${encodeURIComponent(`recording:"${title}"${artistClause}`)}&fmt=json&limit=8`),
+    ]);
+    const rgCandidates = [...new Set((rgData && rgData["release-groups"] || []).map((g) => g.id).filter(Boolean))]
+      .slice(0, 8).map((id) => `https://coverartarchive.org/release-group/${id}/front-500`);
+    const relIds = [];
+    for (const rec of (recData && recData.recordings) || []) {
+      for (const rel of rec.releases || []) if (rel && rel.id) relIds.push(rel.id);
+    }
+    const relCandidates = [...new Set(relIds)].slice(0, 12)
+      .map((id) => `https://coverartarchive.org/release/${id}/front-500`);
+    const candidates = [...rgCandidates, ...relCandidates];
+    return json({ cover: candidates[0] || null, candidates });
+  } catch {
+    return json({ cover: null, candidates: [] });
   }
 }
 

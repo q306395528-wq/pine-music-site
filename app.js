@@ -213,7 +213,7 @@ function itunesJsonp(term) {
       script.remove();
       resolve(value);
     };
-    const timer = setTimeout(() => finish(null), 8000);
+    const timer = setTimeout(() => finish(null), 4000);
     window[name] = (data) => finish(data);
     script.onerror = () => finish(null);
     script.src = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1&callback=${name}`;
@@ -224,6 +224,26 @@ function itunesJsonp(term) {
 function artworkFrom(data) {
   const art = data && data.results && data.results[0] && data.results[0].artworkUrl100;
   return art ? art.replace(/\/\d+x\d+bb\.(jpg|png)$/i, "/600x600bb.$1") : null;
+}
+
+// 预加载一张图，成功返回其 URL，失败返回 null（用于验证封面地址是否真的有图）
+function tryLoadImage(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const timer = setTimeout(() => { img.src = ""; resolve(null); }, 7000);
+    img.onload = () => { clearTimeout(timer); resolve(img.naturalWidth > 0 ? src : null); };
+    img.onerror = () => { clearTimeout(timer); resolve(null); };
+    img.src = src;
+  });
+}
+
+// 依次尝试候选封面地址（MusicBrainz/CoverArtArchive 并非每个 release 都有图），返回第一个能加载的
+async function firstLoadable(candidates) {
+  for (const src of candidates || []) {
+    const ok = await tryLoadImage(src);
+    if (ok) return ok;
+  }
+  return null;
 }
 
 async function ensureArtwork(track) {
@@ -242,6 +262,7 @@ async function ensureArtwork(track) {
     let cover = null;
     await acquireCoverSlot();
     try {
+      // 首选 iTunes（一步到位、清晰），失败则用 MusicBrainz→CoverArtArchive（Worker 可达，浏览器能加载图）
       for (const query of queries) {
         cover = artworkFrom(await itunesJsonp(encodeURIComponent(query)));
         if (cover) break;
@@ -249,7 +270,8 @@ async function ensureArtwork(track) {
       if (!cover) {
         const params = new URLSearchParams({ artist: primaryArtist, title });
         const response = await fetch(`/api/cover?${params}`);
-        cover = (await response.json()).cover || null;
+        const payload = await response.json();
+        cover = await firstLoadable(payload.candidates);
       }
     } catch (error) {
       console.warn("Cover fetch failed", error);
