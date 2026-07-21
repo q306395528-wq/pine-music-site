@@ -124,6 +124,19 @@ body{overflow:hidden}
 .np-meta-text{min-width:0}
 .np-heart{flex:0 0 auto;border:0;background:transparent;color:#c3cbd9;font-size:30px;cursor:pointer;line-height:1;margin-bottom:6px}
 .np-heart:hover{color:#fb7185}
+.card-edit{position:absolute;right:10px;top:10px;z-index:2;width:34px;height:34px;border-radius:50%;border:0;background:rgba(4,7,12,.55);color:#fff;font-size:15px;cursor:pointer;opacity:0;transition:.2s ease;backdrop-filter:blur(6px)}
+.recommend-card:hover .card-edit{opacity:1}
+.card-edit:hover{background:rgba(4,7,12,.8);color:#c4b5fd}
+.edit-modal{position:fixed;inset:0;z-index:300;display:grid;place-items:center;background:rgba(4,7,12,.66);backdrop-filter:blur(6px)}
+.edit-modal[hidden]{display:none}
+.edit-card{width:min(92vw,380px);background:var(--panel-2);border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:var(--shadow)}
+.edit-card h3{margin:0 0 18px;font-size:18px}
+.edit-field{display:block;margin-bottom:14px;font-size:13px;color:var(--muted)}
+.edit-field input{display:block;width:100%;margin-top:7px;height:42px;padding:0 13px;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:#fff;font-size:15px;outline:0}
+.edit-field input:focus{border-color:rgba(139,92,246,.6)}
+.edit-hint{margin:2px 0 18px;font-size:12px;color:#6f788b;line-height:1.5}
+.edit-actions{display:flex;justify-content:flex-end;gap:10px}
+.edit-actions .ghost,.edit-actions .primary{height:40px;border-radius:20px;padding:0 20px;cursor:pointer}
 .side-cover,.bottom-cover{cursor:pointer}
 .now-playing{position:fixed;inset:0;z-index:200;overflow:hidden;background:#070a10}
 .now-playing[hidden]{display:none}

@@ -1,4 +1,5 @@
 const MUSIC_PREFIX = "pine-music/";
+const OVERRIDES_KEY = "meta-overrides.json";
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 const AUDIO_EXTENSIONS = new Set(["mp3", "m4a", "wav", "ogg", "aac", "flac"]);
 const LRC_UA = "PineMusic/1.0 (+https://pine-music-site.q306395528.workers.dev)";
@@ -82,10 +83,54 @@ async function listSongs(env) {
     cursor = page.truncated ? page.cursor : undefined;
   } while (cursor);
 
+  const overrides = await loadOverrides(env);
   return objects
     .filter((object) => AUDIO_EXTENSIONS.has(extensionOf(object.key)))
     .sort((a, b) => new Date(b.uploaded || 0) - new Date(a.uploaded || 0))
-    .map(songFromObject);
+    .map(songFromObject)
+    .map((song) => {
+      const override = overrides[song.file];
+      if (!override) return song;
+      return {
+        ...song,
+        title: override.title || song.title,
+        artist: override.artist || song.artist,
+        manual: true,
+      };
+    });
+}
+
+// 手动修改的歌名/歌手存在一个独立的小 JSON 里（按文件名索引），不必重传音频
+async function loadOverrides(env) {
+  try {
+    const object = await env.MUSIC_BUCKET.get(OVERRIDES_KEY);
+    if (!object) return {};
+    return JSON.parse(await object.text()) || {};
+  } catch {
+    return {};
+  }
+}
+
+async function handleMeta(request, env) {
+  if (!env.UPLOAD_PASSWORD) return json({ error: "尚未设置上传密码 UPLOAD_PASSWORD" }, 503);
+  const password = request.headers.get("x-upload-password") || "";
+  if (password !== env.UPLOAD_PASSWORD) return json({ error: "密码错误" }, 401);
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "请求格式错误" }, 400);
+  }
+  const file = String(body.file || "").trim();
+  const title = String(body.title || "").trim().slice(0, 120);
+  const artist = String(body.artist || "").trim().slice(0, 120);
+  if (!file || !title) return json({ error: "歌名不能为空" }, 400);
+  const overrides = await loadOverrides(env);
+  overrides[file] = { title, artist };
+  await env.MUSIC_BUCKET.put(OVERRIDES_KEY, JSON.stringify(overrides), {
+    httpMetadata: { contentType: "application/json; charset=utf-8" },
+  });
+  return json({ success: true });
 }
 
 async function handleUpload(request, env) {
@@ -260,6 +305,9 @@ export default {
     }
     if (url.pathname === "/api/upload" && request.method === "POST") {
       return handleUpload(request, env);
+    }
+    if (url.pathname === "/api/meta" && request.method === "POST") {
+      return handleMeta(request, env);
     }
     if (url.pathname.startsWith("/api/music/") && ["GET", "HEAD"].includes(request.method)) {
       return handleMusic(request, env, url.pathname);

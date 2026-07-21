@@ -139,8 +139,9 @@ function setCover(element, coverClass) {
 function normalizeCloudSong(song, songIndex) {
   if (!song?.src || !song?.title) return null;
   return {
-    title: humanize(song.title),
-    artist: humanize(song.artist || "未知歌手"),
+    title: song.manual ? song.title : humanize(song.title),
+    artist: song.manual ? (song.artist || "未知歌手") : humanize(song.artist || "未知歌手"),
+    manual: !!song.manual,
     file: song.file || song.src,
     src: song.src,
     cover: song.cover || ["cover-purple", "cover-sunset", "cover-blue"][songIndex % 3],
@@ -475,6 +476,7 @@ function renderSongs(query = "") {
         return `<article class="recommend-card" data-index="${i}">
         <div class="card-cover ${escapeHtml(track.cover)}">
           <button class="card-like ${liked ? "liked" : ""}" data-index="${i}" aria-label="喜欢">${liked ? "♥" : "♡"}</button>
+          <button class="card-edit" data-index="${i}" aria-label="编辑信息" title="编辑歌名/歌手">✎</button>
           <button class="play-chip" aria-label="播放">▶</button>
         </div>
         <div class="card-meta"><strong>${escapeHtml(track.title)}</strong><span>${escapeHtml(track.artist)} · ${escapeHtml(track.genre)}</span></div>
@@ -500,6 +502,12 @@ function renderSongs(query = "") {
       toggleLikeFor(tracks[Number(btn.dataset.index)]);
     });
   });
+  grid.querySelectorAll(".card-edit").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openEditDialog(tracks[Number(btn.dataset.index)]);
+    });
+  });
 }
 
 function reflectLike() {
@@ -521,6 +529,66 @@ function toggleLikeFor(track) {
   reflectLike();
   toast(likedSet.has(key) ? "已添加到我喜欢" : "已取消收藏");
   renderSongs($("#searchInput").value);
+}
+
+let editingFile = null;
+function openEditDialog(track) {
+  if (!track || !track.file) return;
+  editingFile = track.file;
+  $("#editTitle").value = track.title;
+  $("#editArtist").value = track.artist === "未知歌手" ? "" : track.artist;
+  $("#editModal").hidden = false;
+  $("#editTitle").focus();
+  $("#editTitle").select();
+}
+
+function closeEditDialog() {
+  $("#editModal").hidden = true;
+  editingFile = null;
+}
+
+async function saveEdit() {
+  if (!editingFile) return;
+  const title = $("#editTitle").value.trim();
+  const artist = $("#editArtist").value.trim();
+  if (!title) { toast("歌名不能为空"); return; }
+  let password = sessionStorage.getItem("pineMusicUploadPassword") || "";
+  if (!password) password = window.prompt("请输入密码（与上传密码相同）") || "";
+  if (!password) return;
+  const file = editingFile;
+  try {
+    const response = await fetch("/api/meta", {
+      method: "POST",
+      headers: { "content-type": "application/json", "X-Upload-Password": password },
+      body: JSON.stringify({ file, title, artist }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 401) sessionStorage.removeItem("pineMusicUploadPassword");
+      throw new Error(payload.error || `保存失败（${response.status}）`);
+    }
+    sessionStorage.setItem("pineMusicUploadPassword", password);
+    // 本地即时更新，避免整页重置播放；同时用新名字重新匹配封面
+    const track = tracks.find((item) => item.file === file);
+    if (track) {
+      track.title = title;
+      track.artist = artist || "未知歌手";
+      track.manual = true;
+      track.coverUrl = null;
+      track.coverTried = false;
+      renderSongs($("#searchInput").value);
+      renderQueue();
+      if (tracks[index] && tracks[index].file === file) {
+        ["bottomTitle", "sideTitle", "npTitle"].forEach((id) => { if ($(`#${id}`)) $(`#${id}`).textContent = track.title; });
+        ["bottomArtist", "sideArtist", "npArtist"].forEach((id) => { if ($(`#${id}`)) $(`#${id}`).textContent = track.artist; });
+      }
+      ensureArtwork(track);
+    }
+    closeEditDialog();
+    toast("已保存");
+  } catch (error) {
+    toast(error.message || "保存失败", 4000);
+  }
 }
 
 function setView(mode) {
@@ -659,6 +727,11 @@ $("#heartBtn").addEventListener("click", toggleLike);
 if ($("#npHeart")) $("#npHeart").addEventListener("click", toggleLike);
 if ($("#navAll")) $("#navAll").addEventListener("click", () => setView("all"));
 if ($("#navLiked")) $("#navLiked").addEventListener("click", () => setView("liked"));
+$("#editSave").addEventListener("click", saveEdit);
+$("#editCancel").addEventListener("click", closeEditDialog);
+$("#editModal").addEventListener("click", (event) => { if (event.target.id === "editModal") closeEditDialog(); });
+$("#editTitle").addEventListener("keydown", (event) => { if (event.key === "Enter") saveEdit(); });
+$("#editArtist").addEventListener("keydown", (event) => { if (event.key === "Enter") saveEdit(); });
 $("#muteBtn").addEventListener("click", () => {
   audio.muted = !audio.muted;
   $("#muteBtn").textContent = audio.muted ? "×" : "◖";

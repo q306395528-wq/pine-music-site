@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0a0d14" />
   <title>Pine Music · 在线音乐</title>
-  <link rel="stylesheet" href="styles.css?v=20260721-14" />
+  <link rel="stylesheet" href="styles.css?v=20260721-15" />
 </head>
 <body>
   <div class="app-shell">
@@ -127,8 +127,20 @@
       </div>
     </div>
   </div>
+  <div id="editModal" class="edit-modal" hidden>
+    <div class="edit-card">
+      <h3>编辑歌曲信息</h3>
+      <label class="edit-field">歌名<input id="editTitle" type="text" maxlength="120" placeholder="歌名" /></label>
+      <label class="edit-field">歌手<input id="editArtist" type="text" maxlength="120" placeholder="歌手" /></label>
+      <p class="edit-hint">保存后会用新名字重新匹配封面。需输入上传密码。</p>
+      <div class="edit-actions">
+        <button id="editCancel" class="ghost">取消</button>
+        <button id="editSave" class="primary">保存</button>
+      </div>
+    </div>
+  </div>
   <audio id="audio"></audio>
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=20260721-14"></script>
+  <script src="app.js?v=20260721-15"></script>
 </body>
 </html>
