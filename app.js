@@ -183,6 +183,22 @@ function refreshCardCovers() {
   });
 }
 
+// 懒加载封面：卡片滚动进入视口才去查，避免一次性对 iTunes 发起几十个请求
+let cardObserver = null;
+function observeCard(card) {
+  if (!cardObserver) {
+    cardObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        cardObserver.unobserve(entry.target);
+        const track = tracks[Number(entry.target.dataset.index)];
+        if (track) ensureArtwork(track);
+      });
+    }, { rootMargin: "250px" });
+  }
+  cardObserver.observe(card);
+}
+
 // iTunes 不发 CORS 头，但支持 JSONP；走浏览器自己的 IP 可避开 Worker 共享 IP 的限流
 function itunesJsonp(term) {
   return new Promise((resolve) => {
@@ -443,11 +459,17 @@ function renderSongs(query = "") {
       </article>`;
       }).join("")
     : `<div class="empty-state">${emptyText}</div>`;
+  if (cardObserver) cardObserver.disconnect();
   grid.querySelectorAll(".recommend-card").forEach((card) => {
     const track = tracks[Number(card.dataset.index)];
     const cover = card.querySelector(".card-cover");
     if (track && cover) paintCoverEl(cover, track);
-    if (track) ensureArtwork(track);
+    if (track) {
+      const key = trackKey(track);
+      // 已缓存的立即解析并绘制（无网络）；未缓存的滚动进入视口时再查，避免一次性发几十个请求触发限流
+      if (track.coverUrl || coverStore[key] || coverCache.has(key)) ensureArtwork(track);
+      else observeCard(card);
+    }
     card.addEventListener("click", () => loadTrack(Number(card.dataset.index), true));
   });
   grid.querySelectorAll(".card-like").forEach((btn) => {
