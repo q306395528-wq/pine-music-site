@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0a0d14" />
   <title>Pine Music · 在线音乐</title>
-  <link rel="stylesheet" href="styles.css?v=20260721-9" />
+  <link rel="stylesheet" href="styles.css?v=20260721-11" />
 </head>
 <body>
   <div class="app-shell">
@@ -16,6 +16,8 @@
       </div>
       <div class="sidebar-title flush">我的音乐</div>
       <nav class="sub-nav">
+        <button id="navAll" class="nav-item active"><span>◉</span>全部歌曲</button>
+        <button id="navLiked" class="nav-item"><span>♥</span>我喜欢的音乐</button>
         <label class="nav-item upload-entry" for="filePicker"><span>⇧</span>上传云端音乐</label>
         <input id="filePicker" type="file" accept="audio/mpeg,audio/mp4,audio/wav,audio/ogg,audio/aac,audio/flac,.mp3,.m4a,.wav,.ogg,.aac,.flac" multiple hidden />
       </nav>
@@ -48,8 +50,7 @@
       </section>
       <section class="section">
         <div class="section-head">
-          <div><span class="section-kicker">FOR YOU</span><h2>为你推荐</h2></div>
-          <button class="link-button">查看全部 ›</button>
+          <div><span class="section-kicker" id="recommendKicker">FOR YOU</span><h2 id="recommendHeading">为你推荐</h2></div>
         </div>
         <div id="recommendGrid" class="recommend-grid"></div>
       </section>
@@ -100,8 +101,11 @@
       <div class="np-side">
         <div id="npCover" class="np-cover cover-purple"></div>
         <div class="np-meta">
-          <h2 id="npTitle">—</h2>
-          <p id="npArtist">—</p>
+          <div class="np-meta-text">
+            <h2 id="npTitle">—</h2>
+            <p id="npArtist">—</p>
+          </div>
+          <button id="npHeart" class="np-heart" aria-label="喜欢">♡</button>
         </div>
         <div class="np-progress">
           <div class="progress-track"><span id="npProgressFill"></span></div>
@@ -125,6 +129,6 @@
   </div>
   <audio id="audio"></audio>
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=20260721-9"></script>
+  <script src="app.js?v=20260721-11"></script>
 </body>
 </html>

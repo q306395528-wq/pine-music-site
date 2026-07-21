@@ -116,6 +116,14 @@ body{overflow:hidden}
 .lyrics-box p.active{color:#c4b5fd;font-weight:600;transform:scale(1.04)}
 .lyrics-box.plain p{color:#9aa4b6;text-align:left}
 .lyrics-hint{padding:24px 4px;color:#7f899d;font-size:13px}
+.card-like{position:absolute;left:10px;top:10px;z-index:2;width:34px;height:34px;border-radius:50%;border:0;background:rgba(4,7,12,.55);color:#fff;font-size:17px;cursor:pointer;opacity:0;transition:.2s ease;backdrop-filter:blur(6px)}
+.recommend-card:hover .card-like{opacity:1}
+.card-like.liked{opacity:1;color:#fb7185}
+.card-like:hover{background:rgba(4,7,12,.8)}
+.np-meta{display:flex;align-items:flex-end;justify-content:space-between;gap:14px}
+.np-meta-text{min-width:0}
+.np-heart{flex:0 0 auto;border:0;background:transparent;color:#c3cbd9;font-size:30px;cursor:pointer;line-height:1;margin-bottom:6px}
+.np-heart:hover{color:#fb7185}
 .side-cover,.bottom-cover{cursor:pointer}
 .now-playing{position:fixed;inset:0;z-index:200;overflow:hidden;background:#070a10}
 .now-playing[hidden]{display:none}

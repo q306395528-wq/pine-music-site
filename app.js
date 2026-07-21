@@ -42,13 +42,71 @@ let tracks = [...fallbackTracks];
 let index = 0;
 let shuffle = false;
 let repeat = false;
-let liked = false;
 const coverCache = new Map();
 const lyricsCache = new Map();
 let lyricLines = [];
 let activeLyric = -1;
 let lyricsToken = 0;
 let currentPanel = "queue";
+let viewMode = "all";
+const LIKED_KEY = "pineMusicLiked";
+let likedSet = new Set();
+try { likedSet = new Set(JSON.parse(localStorage.getItem(LIKED_KEY) || "[]")); } catch (e) { /* ignore */ }
+
+// 封面持久化：每首歌只向 iTunes 查一次，之后从本地读取，避免每次刷新都发几十个请求触发限流
+const COVERS_KEY = "pineMusicCovers";
+let coverStore = {};
+try { coverStore = JSON.parse(localStorage.getItem(COVERS_KEY) || "{}"); } catch (e) { /* ignore */ }
+function saveCover(key, url) {
+  if (!url) return;
+  coverStore[key] = url;
+  try { localStorage.setItem(COVERS_KEY, JSON.stringify(coverStore)); } catch (e) { /* ignore */ }
+}
+
+// 限制并发，降低突发请求触发 iTunes 限流的概率
+let coverInFlight = 0;
+const coverQueue = [];
+function acquireCoverSlot() {
+  return new Promise((resolve) => {
+    const run = () => { if (coverInFlight < 4) { coverInFlight += 1; resolve(); } else coverQueue.push(run); };
+    run();
+  });
+}
+function releaseCoverSlot() {
+  coverInFlight -= 1;
+  const next = coverQueue.shift();
+  if (next) setTimeout(next, 180);
+}
+
+// 很多文件名是无空格的拼接（AllFallsDown、EminemDido），驼峰拆词后既好看又便于搜索
+function humanize(text) {
+  return String(text || "")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Za-z])([（(])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// 为封面/歌词匹配构造干净的搜索词：标题去括号/噪声词，歌手只取前两个词作主歌手
+function searchTerms(track) {
+  const title = humanize(track.title)
+    .replace(/[（(【\[].*?[)）\]】]/g, " ")
+    .replace(/\b(official|video|audio|lyrics?|explicit|mv|hd|hq|remaster(ed)?)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const words = humanize(track.artist).split(/\s+/).filter(Boolean);
+  return { title, primaryArtist: words.slice(0, 2).join(" ") };
+}
+
+function likeKey(track) {
+  return track ? (track.file || track.src || `${track.artist}|${track.title}`) : "";
+}
+function isLiked(track) {
+  return likedSet.has(likeKey(track));
+}
+function persistLiked() {
+  try { localStorage.setItem(LIKED_KEY, JSON.stringify([...likedSet])); } catch (e) { /* ignore */ }
+}
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>'"]/g, (character) => ({
@@ -81,8 +139,9 @@ function setCover(element, coverClass) {
 function normalizeCloudSong(song, songIndex) {
   if (!song?.src || !song?.title) return null;
   return {
-    title: song.title,
-    artist: song.artist || "未知歌手",
+    title: humanize(song.title),
+    artist: humanize(song.artist || "未知歌手"),
+    file: song.file || song.src,
     src: song.src,
     cover: song.cover || ["cover-purple", "cover-sunset", "cover-blue"][songIndex % 3],
     durationLabel: song.duration || song.durationLabel || "--:--",
@@ -155,22 +214,35 @@ async function ensureArtwork(track) {
   if (!track || track.demo || track.coverUrl || track.coverTried) return;
   track.coverTried = true;
   const key = trackKey(track);
-  if (coverCache.has(key)) {
+  if (coverStore[key]) {
+    track.coverUrl = coverStore[key];
+  } else if (coverCache.has(key)) {
     track.coverUrl = coverCache.get(key) || null;
   } else {
-    const term = encodeURIComponent(`${track.artist || ""} ${track.title || ""}`.trim());
-    let cover = artworkFrom(await itunesJsonp(term));
-    if (!cover) {
-      try {
-        const params = new URLSearchParams({ artist: track.artist || "", title: track.title || "" });
+    const { title, primaryArtist } = searchTerms(track);
+    const queries = [];
+    if (primaryArtist && title) queries.push(`${primaryArtist} ${title}`);
+    if (title) queries.push(title);
+    let cover = null;
+    await acquireCoverSlot();
+    try {
+      for (const query of queries) {
+        cover = artworkFrom(await itunesJsonp(encodeURIComponent(query)));
+        if (cover) break;
+      }
+      if (!cover) {
+        const params = new URLSearchParams({ artist: primaryArtist, title });
         const response = await fetch(`/api/cover?${params}`);
         cover = (await response.json()).cover || null;
-      } catch (error) {
-        console.warn("Cover fallback failed", error);
       }
+    } catch (error) {
+      console.warn("Cover fetch failed", error);
+    } finally {
+      releaseCoverSlot();
     }
     track.coverUrl = cover;
     coverCache.set(key, cover);
+    saveCover(key, cover);
   }
   if (track.coverUrl) {
     repaintCurrentCover();
@@ -269,6 +341,7 @@ function paintNowPlaying() {
 function openNowPlaying() {
   if (!tracks.length) return;
   paintNowPlaying();
+  reflectLike();
   $("#nowPlaying").hidden = false;
   document.body.classList.add("np-open");
   switchNpPanel("lyrics");
@@ -295,7 +368,8 @@ async function loadLyrics(track) {
   if (lyricsCache.has(key)) { apply(lyricsCache.get(key)); return; }
   renderLyricsMessage("正在加载歌词…");
   try {
-    const params = new URLSearchParams({ artist: track.artist || "", title: track.title || "" });
+    const { title, primaryArtist } = searchTerms(track);
+    const params = new URLSearchParams({ artist: primaryArtist, title });
     const response = await fetch(`/api/lyrics?${params}`);
     const data = await response.json();
     lyricsCache.set(key, data);
@@ -329,6 +403,7 @@ function loadTrack(nextIndex, shouldPlay = false) {
   paintCoverEl($("#bottomCover"), track);
   paintCoverEl($("#sideCover"), track);
   if (!$("#nowPlaying").hidden) paintNowPlaying();
+  reflectLike();
   renderQueue();
   ensureArtwork(track);
   loadLyrics(track);
@@ -351,14 +426,23 @@ function previousTrack() {
 
 function renderSongs(query = "") {
   const normalizedQuery = query.toLowerCase();
-  const data = tracks.filter((track) => `${track.title} ${track.artist} ${track.genre}`.toLowerCase().includes(normalizedQuery));
+  let data = tracks.filter((track) => `${track.title} ${track.artist} ${track.genre}`.toLowerCase().includes(normalizedQuery));
+  if (viewMode === "liked") data = data.filter(isLiked);
   const grid = $("#recommendGrid");
+  const emptyText = viewMode === "liked" ? "还没有喜欢的歌曲，点封面右上角的 ♡ 添加" : "没有找到匹配的音乐";
   grid.innerHTML = data.length
-    ? data.map((track) => `<article class="recommend-card" data-index="${tracks.indexOf(track)}">
-        <div class="card-cover ${escapeHtml(track.cover)}"><button class="play-chip" aria-label="播放">▶</button></div>
+    ? data.map((track) => {
+        const i = tracks.indexOf(track);
+        const liked = isLiked(track);
+        return `<article class="recommend-card" data-index="${i}">
+        <div class="card-cover ${escapeHtml(track.cover)}">
+          <button class="card-like ${liked ? "liked" : ""}" data-index="${i}" aria-label="喜欢">${liked ? "♥" : "♡"}</button>
+          <button class="play-chip" aria-label="播放">▶</button>
+        </div>
         <div class="card-meta"><strong>${escapeHtml(track.title)}</strong><span>${escapeHtml(track.artist)} · ${escapeHtml(track.genre)}</span></div>
-      </article>`).join("")
-    : '<div class="empty-state">没有找到匹配的音乐</div>';
+      </article>`;
+      }).join("")
+    : `<div class="empty-state">${emptyText}</div>`;
   grid.querySelectorAll(".recommend-card").forEach((card) => {
     const track = tracks[Number(card.dataset.index)];
     const cover = card.querySelector(".card-cover");
@@ -366,6 +450,48 @@ function renderSongs(query = "") {
     if (track) ensureArtwork(track);
     card.addEventListener("click", () => loadTrack(Number(card.dataset.index), true));
   });
+  grid.querySelectorAll(".card-like").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toggleLikeFor(tracks[Number(btn.dataset.index)]);
+    });
+  });
+}
+
+function reflectLike() {
+  const on = isLiked(tracks[index]);
+  $("#bottomHeart").textContent = on ? "♥" : "♡";
+  $("#bottomHeart").style.color = on ? "#fb7185" : "";
+  $("#heartBtn").textContent = on ? "♥" : "♡";
+  $("#heartBtn").style.color = on ? "#fb7185" : "#aab2c1";
+  const np = $("#npHeart");
+  if (np) { np.textContent = on ? "♥" : "♡"; np.style.color = on ? "#fb7185" : ""; }
+}
+
+function toggleLikeFor(track) {
+  if (!track) return;
+  const key = likeKey(track);
+  if (likedSet.has(key)) likedSet.delete(key);
+  else likedSet.add(key);
+  persistLiked();
+  reflectLike();
+  toast(likedSet.has(key) ? "已添加到我喜欢" : "已取消收藏");
+  renderSongs($("#searchInput").value);
+}
+
+function setView(mode) {
+  viewMode = mode;
+  const heading = $("#recommendHeading");
+  if (heading) heading.textContent = mode === "liked" ? "我喜欢的音乐" : "为你推荐";
+  const kicker = $("#recommendKicker");
+  if (kicker) kicker.textContent = mode === "liked" ? "MY LIKES" : "FOR YOU";
+  const navAll = $("#navAll");
+  const navLiked = $("#navLiked");
+  if (navAll) navAll.classList.toggle("active", mode === "all");
+  if (navLiked) navLiked.classList.toggle("active", mode === "liked");
+  renderSongs($("#searchInput").value);
+  const content = document.querySelector(".content");
+  if (content) content.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function renderQueue() {
@@ -481,14 +607,14 @@ function toggleRepeat() {
 ["#repeatBtn", "#sideRepeat"].forEach((selector) => $(selector).addEventListener("click", toggleRepeat));
 
 function toggleLike() {
-  liked = !liked;
-  $("#bottomHeart").textContent = liked ? "♥" : "♡";
-  $("#heartBtn").style.color = liked ? "#fb7185" : "#aab2c1";
-  toast(liked ? "已添加到我喜欢" : "已取消收藏");
+  toggleLikeFor(tracks[index]);
 }
 
 $("#bottomHeart").addEventListener("click", toggleLike);
 $("#heartBtn").addEventListener("click", toggleLike);
+if ($("#npHeart")) $("#npHeart").addEventListener("click", toggleLike);
+if ($("#navAll")) $("#navAll").addEventListener("click", () => setView("all"));
+if ($("#navLiked")) $("#navLiked").addEventListener("click", () => setView("liked"));
 $("#muteBtn").addEventListener("click", () => {
   audio.muted = !audio.muted;
   $("#muteBtn").textContent = audio.muted ? "×" : "◖";
