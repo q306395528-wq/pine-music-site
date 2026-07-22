@@ -82,7 +82,8 @@ body{overflow:hidden}
 .cover-purple{background:linear-gradient(145deg,#1e3a8a,#6d28d9 48%,#ec4899)}
 .cover-sunset{background:linear-gradient(145deg,#fb7185,#7c3aed 62%,#172554)}
 .cover-blue{background:linear-gradient(145deg,#0ea5e9,#4338ca,#0f172a)}
-.queue-panel{grid-column:3;grid-row:1;padding:18px 24px 125px;border-left:1px solid var(--line);background:linear-gradient(180deg,rgba(11,16,25,.9),rgba(7,11,17,.75));overflow:auto}
+.queue-panel{grid-column:3;grid-row:1;padding:18px 24px 22px;border-left:1px solid var(--line);background:linear-gradient(180deg,rgba(11,16,25,.9),rgba(7,11,17,.75));display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.queue-panel>.now-title,.queue-panel>.side-cover,.queue-panel>.side-track-row,.queue-panel>.side-progress,.queue-panel>.queue-header{flex:0 0 auto}
 .now-title{font-weight:700;margin:4px 0 13px}
 .side-cover{height:223px;border-radius:15px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
 .side-cover:before{content:"";position:absolute;inset:auto 0 0;height:55%;background:linear-gradient(transparent,rgba(5,8,15,.75))}
@@ -101,7 +102,10 @@ body{overflow:hidden}
 .queue-header{display:flex;justify-content:space-between;padding:16px 0 10px;border-top:1px solid var(--line)}
 .queue-header span{color:#7f899d;font-weight:500;font-size:12px;margin-left:4px}
 .queue-header button{border:0;background:transparent;color:#7f899d;cursor:pointer}
-.queue-list{display:grid;gap:1px}
+.queue-list{display:grid;gap:1px;flex:1 1 auto;min-height:0;overflow-y:auto;align-content:start;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.13) transparent}
+.queue-list::-webkit-scrollbar{width:10px}
+.queue-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.13);border-radius:10px;border:3px solid transparent;background-clip:content-box}
+.queue-list::-webkit-scrollbar-thumb:hover{background:rgba(196,181,253,.42);border:3px solid transparent;background-clip:content-box}
 .queue-list[hidden],.lyrics-box[hidden],.np-queue[hidden],.np-lyrics[hidden]{display:none}
 .queue-item{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;padding:9px 9px;border-radius:10px;color:#a8b0bf;cursor:pointer;transition:background .15s ease,color .15s ease}
 .queue-item:hover{background:rgba(255,255,255,.05);color:#d6dae4}
@@ -118,7 +122,7 @@ body{overflow:hidden}
 .panel-tab span{color:#7f899d;font-weight:500;font-size:12px;margin-left:2px}
 .panel-tab.active{color:#fff}
 .panel-tab.active span{color:#c4b5fd}
-.lyrics-box{position:relative;max-height:230px;overflow-y:auto;padding:6px 2px 20px;scrollbar-width:none;-webkit-mask-image:linear-gradient(transparent,#000 14%,#000 82%,transparent)}
+.lyrics-box{position:relative;flex:1 1 auto;min-height:0;overflow-y:auto;padding:6px 2px 20px;scrollbar-width:none;-webkit-mask-image:linear-gradient(transparent,#000 10%,#000 88%,transparent);mask-image:linear-gradient(transparent,#000 10%,#000 88%,transparent)}
 .lyrics-box::-webkit-scrollbar{display:none}
 .lyrics-box p{margin:0;padding:7px 2px;font-size:13.5px;line-height:1.5;color:#6f788b;transition:color .2s ease,transform .2s ease;transform-origin:left center}
 .lyrics-box p.active{color:#c4b5fd;font-weight:600;transform:scale(1.04)}
