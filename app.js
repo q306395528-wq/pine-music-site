@@ -53,6 +53,43 @@ const LIKED_KEY = "pineMusicLiked";
 let likedSet = new Set();
 try { likedSet = new Set(JSON.parse(localStorage.getItem(LIKED_KEY) || "[]")); } catch (e) { /* ignore */ }
 
+// 时长持久化：读到一次就存本地，下次秒显（键用文件名）
+const DURATIONS_KEY = "pineMusicDurations";
+let durationStore = {};
+try { durationStore = JSON.parse(localStorage.getItem(DURATIONS_KEY) || "{}"); } catch (e) { /* ignore */ }
+function saveDuration(file, seconds) {
+  if (!file || !Number.isFinite(seconds) || seconds <= 0) return;
+  const label = fmt(seconds);
+  if (durationStore[file] === label) return;
+  durationStore[file] = label;
+  try { localStorage.setItem(DURATIONS_KEY, JSON.stringify(durationStore)); } catch (e) { /* ignore */ }
+  const track = tracks.find((item) => item.file === file);
+  if (track) track.durationLabel = label;
+  const i = track ? tracks.indexOf(track) : -1;
+  if (i >= 0) {
+    document.querySelectorAll(`#queueList .queue-item[data-index="${i}"] .queue-duration, #npQueue .queue-item[data-index="${i}"] .queue-duration`)
+      .forEach((el) => { el.textContent = label; });
+  }
+}
+// 后台逐个读取时长（只加载文件头，不下整首），节流并发
+function prefetchDurations() {
+  const pending = tracks.filter((t) => !t.demo && t.file && !durationStore[t.file] && (!t.durationLabel || t.durationLabel === "--:--"));
+  let i = 0;
+  const run = () => {
+    if (i >= pending.length) return;
+    const track = pending[i++];
+    const probe = new Audio();
+    probe.preload = "metadata";
+    let settled = false;
+    const finish = () => { if (settled) return; settled = true; probe.removeAttribute("src"); run(); };
+    probe.addEventListener("loadedmetadata", () => { saveDuration(track.file, probe.duration); finish(); });
+    probe.addEventListener("error", finish);
+    setTimeout(finish, 9000);
+    probe.src = track.src;
+  };
+  for (let k = 0; k < 3; k += 1) run();
+}
+
 // 封面持久化：每首歌只向 iTunes 查一次，之后从本地读取，避免每次刷新都发几十个请求触发限流
 const COVERS_KEY = "pineMusicCovers";
 let coverStore = {};
@@ -145,7 +182,7 @@ function normalizeCloudSong(song, songIndex) {
     file: song.file || song.src,
     src: song.src,
     cover: song.cover || ["cover-purple", "cover-sunset", "cover-blue"][songIndex % 3],
-    durationLabel: song.duration || song.durationLabel || "--:--",
+    durationLabel: durationStore[song.file || song.src] || (song.duration && song.duration !== "--:--" ? song.duration : "") || song.durationLabel || "--:--",
     genre: song.genre || "云端音乐",
   };
 }
@@ -749,6 +786,7 @@ async function syncCloud({ notify = true } = {}) {
     pickGuess();
     renderGuess();
     renderQueue();
+    setTimeout(prefetchDurations, 1500);
     if (notify) toast(`已同步 ${tracks.length} 首云端音乐`);
   } catch (error) {
     console.warn("Cloud music sync failed", error);
@@ -803,6 +841,8 @@ audio.addEventListener("pause", () => {
 });
 audio.addEventListener("loadedmetadata", () => {
   $("#durationTime").textContent = $("#sideDuration").textContent = $("#npDuration").textContent = fmt(audio.duration);
+  const track = tracks[index];
+  if (track && track.file) saveDuration(track.file, audio.duration);
   updatePositionState();
 });
 audio.addEventListener("timeupdate", () => {
