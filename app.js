@@ -174,6 +174,7 @@ function repaintCurrentCover() {
   paintCoverEl($("#sideCover"), track);
   paintCoverEl($("#bottomCover"), track);
   if (!$("#nowPlaying").hidden) paintNowPlaying();
+  updateMediaSession();
 }
 
 function refreshCardCovers() {
@@ -367,6 +368,56 @@ function updateLyric(time) {
   });
 }
 
+// Media Session：让 iPhone 锁屏/控制中心、安卓通知栏、桌面媒体控件显示封面与信息、响应硬件控制
+function updateMediaSession() {
+  if (!("mediaSession" in navigator) || !("MediaMetadata" in window)) return;
+  const track = tracks[index];
+  if (!track) return;
+  const artwork = track.coverUrl
+    ? [
+        { src: track.coverUrl, sizes: "512x512", type: "image/jpeg" },
+        { src: track.coverUrl, sizes: "256x256", type: "image/jpeg" },
+      ]
+    : [];
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title || "未知歌曲",
+      artist: track.artist || "未知歌手",
+      album: "Pine Music",
+      artwork,
+    });
+  } catch (e) { /* ignore */ }
+}
+
+function updatePositionState() {
+  if (!("mediaSession" in navigator) || !navigator.mediaSession.setPositionState) return;
+  if (!audio.duration || !Number.isFinite(audio.duration)) return;
+  try {
+    navigator.mediaSession.setPositionState({
+      duration: audio.duration,
+      playbackRate: audio.playbackRate || 1,
+      position: Math.min(audio.currentTime, audio.duration),
+    });
+  } catch (e) { /* ignore */ }
+}
+
+function setupMediaSession() {
+  if (!("mediaSession" in navigator)) return;
+  const ms = navigator.mediaSession;
+  const bind = (action, handler) => { try { ms.setActionHandler(action, handler); } catch (e) { /* 部分动作不支持 */ } };
+  bind("play", () => audio.play());
+  bind("pause", () => audio.pause());
+  bind("previoustrack", () => previousTrack());
+  bind("nexttrack", () => nextTrack());
+  bind("seekbackward", (d) => { audio.currentTime = Math.max(0, audio.currentTime - ((d && d.seekOffset) || 10)); });
+  bind("seekforward", (d) => { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + ((d && d.seekOffset) || 10)); });
+  bind("seekto", (d) => {
+    if (!d) return;
+    if (d.fastSeek && "fastSeek" in audio) { audio.fastSeek(d.seekTime); return; }
+    if (audio.duration) audio.currentTime = d.seekTime;
+  });
+}
+
 function paintNowPlaying() {
   const track = tracks[index];
   if (!track) return;
@@ -444,6 +495,7 @@ function loadTrack(nextIndex, shouldPlay = false) {
   if (!$("#nowPlaying").hidden) paintNowPlaying();
   reflectLike();
   renderQueue();
+  updateMediaSession();
   ensureArtwork(track);
   loadLyrics(track);
   if (shouldPlay) audio.play().catch(() => toast("请再次点击播放"));
@@ -677,9 +729,21 @@ async function uploadFiles(files) {
 }
 
 audio.volume = 0.72;
-audio.addEventListener("play", () => { $("#playBtn").textContent = $("#sidePlay").textContent = $("#npPlay").textContent = "Ⅱ"; });
-audio.addEventListener("pause", () => { $("#playBtn").textContent = $("#sidePlay").textContent = $("#npPlay").textContent = "▶"; });
-audio.addEventListener("loadedmetadata", () => { $("#durationTime").textContent = $("#sideDuration").textContent = $("#npDuration").textContent = fmt(audio.duration); });
+setupMediaSession();
+audio.addEventListener("play", () => {
+  $("#playBtn").textContent = $("#sidePlay").textContent = $("#npPlay").textContent = "Ⅱ";
+  if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
+  updateMediaSession();
+  updatePositionState();
+});
+audio.addEventListener("pause", () => {
+  $("#playBtn").textContent = $("#sidePlay").textContent = $("#npPlay").textContent = "▶";
+  if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
+});
+audio.addEventListener("loadedmetadata", () => {
+  $("#durationTime").textContent = $("#sideDuration").textContent = $("#npDuration").textContent = fmt(audio.duration);
+  updatePositionState();
+});
 audio.addEventListener("timeupdate", () => {
   const progress = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
   $("#progressBar").value = progress;
