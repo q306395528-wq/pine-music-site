@@ -102,6 +102,7 @@ body{overflow:hidden}
 .queue-header span{color:#7f899d;font-weight:500;font-size:12px;margin-left:4px}
 .queue-header button{border:0;background:transparent;color:#7f899d;cursor:pointer}
 .queue-list{display:grid;gap:1px}
+.queue-list[hidden],.lyrics-box[hidden],.np-queue[hidden],.np-lyrics[hidden]{display:none}
 .queue-item{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;padding:9px 9px;border-radius:10px;color:#a8b0bf;cursor:pointer;transition:background .15s ease,color .15s ease}
 .queue-item:hover{background:rgba(255,255,255,.05);color:#d6dae4}
 .queue-item.active{color:#c4b5fd;background:rgba(139,92,246,.14)}
