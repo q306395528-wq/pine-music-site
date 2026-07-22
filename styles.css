@@ -150,14 +150,14 @@ body{overflow:hidden}
 .np-meta h2{margin:26px 0 6px;font-size:29px}
 .np-meta p{margin:0;color:#9aa4b6;font-size:15px}
 .np-progress{margin-top:24px}
-.np-controls{display:flex;align-items:center;justify-content:center;gap:34px;margin-top:22px}
+.np-controls{display:flex;align-items:center;justify-content:space-between;gap:26px;margin-top:22px;padding:0 8px}
 .np-controls button{border:0;background:transparent;color:#c3cbd9;font-size:20px;cursor:pointer}
 .np-controls .np-play{width:60px;height:60px;border-radius:50%;background:linear-gradient(145deg,#8b5cf6,#c026d3);color:#fff;font-size:22px;box-shadow:0 14px 34px rgba(139,92,246,.3)}
 .np-controls button:not(.np-play):hover{color:#fff}
-.np-controls-2{display:flex;align-items:center;justify-content:center;gap:20px;margin-top:20px}
+.np-controls-2{display:flex;align-items:center;gap:20px;margin-top:20px;padding:0 4px}
 .np-controls-2 button{border:0;background:transparent;color:#8b95a8;font-size:17px;cursor:pointer;transition:color .2s ease}
 .np-controls-2 button:hover{color:#c4b5fd}
-.np-volume{display:flex;align-items:center;gap:10px;margin-left:6px}
+.np-volume{display:flex;align-items:center;gap:10px;margin-left:auto}
 .np-volume input{width:120px;accent-color:#a855f7}
 .np-cover{box-shadow:0 30px 70px rgba(0,0,0,.55),0 0 60px rgba(139,92,246,.15)}
 .np-meta p::after{content:" ›";color:#6f788b}
