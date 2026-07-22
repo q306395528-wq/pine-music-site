@@ -69,7 +69,8 @@ body{overflow:hidden}
 .recommend-card{cursor:pointer;transition:.2s ease}
 .recommend-card:hover{transform:translateY(-5px)}
 .card-cover{position:relative;aspect-ratio:1;border-radius:15px;overflow:hidden;border:1px solid rgba(255,255,255,.08);box-shadow:0 14px 30px rgba(0,0,0,.22)}
-.card-cover:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 48%,rgba(2,6,12,.78))}
+.card-cover:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(2,6,12,.5));opacity:0;transition:opacity .2s ease;pointer-events:none}
+.recommend-card:hover .card-cover:after{opacity:1}
 .play-chip{position:absolute;right:10px;bottom:10px;z-index:2;width:36px;height:36px;border-radius:50%;border:0;background:rgba(4,7,12,.72);display:grid;place-items:center;cursor:pointer;opacity:.9}
 .card-meta{padding:10px 3px 0}
 .card-meta strong{display:block;font-size:14px;margin-bottom:4px}

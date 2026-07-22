@@ -409,8 +409,8 @@ function setupMediaSession() {
   bind("pause", () => audio.pause());
   bind("previoustrack", () => previousTrack());
   bind("nexttrack", () => nextTrack());
-  bind("seekbackward", (d) => { audio.currentTime = Math.max(0, audio.currentTime - ((d && d.seekOffset) || 10)); });
-  bind("seekforward", (d) => { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + ((d && d.seekOffset) || 10)); });
+  // 不注册 seekbackward/seekforward：否则 iOS 锁屏会用 ±10 秒按钮取代上/下一首。
+  // 保留 seekto 以支持进度条拖动（不与上/下一首冲突）。
   bind("seekto", (d) => {
     if (!d) return;
     if (d.fastSeek && "fastSeek" in audio) { audio.fastSeek(d.seekTime); return; }
