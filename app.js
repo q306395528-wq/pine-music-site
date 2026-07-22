@@ -581,6 +581,45 @@ function renderSongs(query = "") {
   });
 }
 
+let guessTracks = [];
+function pickGuess() {
+  const pool = tracks.filter((track) => !track.demo);
+  guessTracks = [...pool].sort(() => Math.random() - 0.5).slice(0, 5);
+}
+
+function renderGuess() {
+  const grid = $("#guessGrid");
+  if (!grid) return;
+  if (!guessTracks.length) pickGuess();
+  grid.innerHTML = guessTracks.length
+    ? guessTracks.map((track) => {
+        const i = tracks.indexOf(track);
+        const liked = isLiked(track);
+        return `<article class="recommend-card" data-index="${i}">
+        <div class="card-cover ${escapeHtml(track.cover)}">
+          <button class="card-like ${liked ? "liked" : ""}" data-index="${i}" aria-label="喜欢">${liked ? "♥" : "♡"}</button>
+          <button class="card-edit" data-index="${i}" aria-label="编辑信息" title="编辑歌名/歌手">✎</button>
+          <button class="play-chip" aria-label="播放">▶</button>
+        </div>
+        <div class="card-meta"><strong>${escapeHtml(track.title)}</strong><span>${escapeHtml(track.artist)} · ${escapeHtml(track.genre)}</span></div>
+      </article>`;
+      }).join("")
+    : '<div class="empty-state">上传更多歌曲，这里会给你惊喜</div>';
+  grid.querySelectorAll(".recommend-card").forEach((card) => {
+    const track = tracks[Number(card.dataset.index)];
+    const cover = card.querySelector(".card-cover");
+    if (track && cover) paintCoverEl(cover, track);
+    if (track) ensureArtwork(track);
+    card.addEventListener("click", () => loadTrack(Number(card.dataset.index), true));
+  });
+  grid.querySelectorAll(".card-like").forEach((btn) => {
+    btn.addEventListener("click", (event) => { event.stopPropagation(); toggleLikeFor(tracks[Number(btn.dataset.index)]); });
+  });
+  grid.querySelectorAll(".card-edit").forEach((btn) => {
+    btn.addEventListener("click", (event) => { event.stopPropagation(); openEditDialog(tracks[Number(btn.dataset.index)]); });
+  });
+}
+
 function reflectLike() {
   const on = isLiked(tracks[index]);
   $("#bottomHeart").textContent = on ? "♥" : "♡";
@@ -600,6 +639,7 @@ function toggleLikeFor(track) {
   reflectLike();
   toast(likedSet.has(key) ? "已添加到我喜欢" : "已取消收藏");
   renderSongs($("#searchInput").value);
+  renderGuess();
 }
 
 let editingFile = null;
@@ -706,6 +746,8 @@ async function syncCloud({ notify = true } = {}) {
     index = 0;
     loadTrack(0);
     renderSongs($("#searchInput").value);
+    pickGuess();
+    renderGuess();
     renderQueue();
     if (notify) toast(`已同步 ${tracks.length} 首云端音乐`);
   } catch (error) {
@@ -750,13 +792,13 @@ async function uploadFiles(files) {
 audio.volume = 0.72;
 setupMediaSession();
 audio.addEventListener("play", () => {
-  $("#playBtn").textContent = $("#sidePlay").textContent = $("#npPlay").textContent = "Ⅱ";
+  $("#playBtn").textContent = $("#npPlay").textContent = "Ⅱ";
   if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
   updateMediaSession();
   updatePositionState();
 });
 audio.addEventListener("pause", () => {
-  $("#playBtn").textContent = $("#sidePlay").textContent = $("#npPlay").textContent = "▶";
+  $("#playBtn").textContent = $("#npPlay").textContent = "▶";
   if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
 });
 audio.addEventListener("loadedmetadata", () => {
@@ -794,14 +836,14 @@ function reflectMute() {
 $("#volumeBar").addEventListener("input", (event) => setVolume(event.target.value));
 if ($("#npVolume")) $("#npVolume").addEventListener("input", (event) => setVolume(event.target.value));
 if ($("#npMute")) $("#npMute").addEventListener("click", () => { audio.muted = !audio.muted; reflectMute(); });
-["#playBtn", "#sidePlay"].forEach((selector) => $(selector).addEventListener("click", togglePlay));
-["#nextBtn", "#sideNext"].forEach((selector) => $(selector).addEventListener("click", nextTrack));
-["#prevBtn", "#sidePrev"].forEach((selector) => $(selector).addEventListener("click", previousTrack));
+$("#playBtn").addEventListener("click", togglePlay);
+$("#nextBtn").addEventListener("click", nextTrack);
+$("#prevBtn").addEventListener("click", previousTrack);
 $("#heroPlay").addEventListener("click", () => loadTrack(0, true));
 $("#shuffleAll").addEventListener("click", () => { shuffle = true; nextTrack(); toast("已开启随机播放"); });
 
-const SHUFFLE_BTNS = ["#shuffleBtn", "#sideShuffle", "#npShuffle"];
-const REPEAT_BTNS = ["#repeatBtn", "#sideRepeat", "#npRepeat"];
+const SHUFFLE_BTNS = ["#shuffleBtn", "#npShuffle"];
+const REPEAT_BTNS = ["#repeatBtn", "#npRepeat"];
 
 function toggleShuffle() {
   shuffle = !shuffle;
@@ -827,6 +869,12 @@ $("#heartBtn").addEventListener("click", toggleLike);
 if ($("#npHeart")) $("#npHeart").addEventListener("click", toggleLike);
 if ($("#navAll")) $("#navAll").addEventListener("click", () => setView("all"));
 if ($("#navLiked")) $("#navLiked").addEventListener("click", () => setView("liked"));
+if ($("#guessRefresh")) $("#guessRefresh").addEventListener("click", () => { pickGuess(); renderGuess(); toast("已换一批"); });
+if ($("#bottomQueueBtn")) $("#bottomQueueBtn").addEventListener("click", () => { openNowPlaying(); switchNpPanel("queue"); });
+if ($("#sideSeek")) $("#sideSeek").addEventListener("click", (event) => {
+  const rect = event.currentTarget.getBoundingClientRect();
+  if (audio.duration) audio.currentTime = ((event.clientX - rect.left) / rect.width) * audio.duration;
+});
 $("#editSave").addEventListener("click", saveEdit);
 $("#editCancel").addEventListener("click", closeEditDialog);
 $("#editModal").addEventListener("click", (event) => { if (event.target.id === "editModal") closeEditDialog(); });
@@ -877,5 +925,6 @@ $("#filePicker").addEventListener("change", async (event) => {
 
 loadTrack(0);
 renderSongs();
+renderGuess();
 renderQueue();
 syncCloud({ notify: false });
