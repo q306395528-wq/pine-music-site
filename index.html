@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Pine Music" />
-  <link rel="stylesheet" href="styles.css?v=20260721-17" />
+  <link rel="stylesheet" href="styles.css?v=20260721-22" />
 </head>
 <body>
   <div class="app-shell">
@@ -124,6 +124,14 @@
           <button id="npPlay" class="np-play" aria-label="播放/暂停">▶</button>
           <button id="npNext" aria-label="下一首">▶|</button>
         </div>
+        <div class="np-controls-2">
+          <button id="npRepeat" aria-label="单曲循环">↻</button>
+          <button id="npShuffle" aria-label="随机播放">⤨</button>
+          <div class="np-volume">
+            <button id="npMute" aria-label="静音">◖</button>
+            <input id="npVolume" type="range" min="0" max="1" step="0.01" value="0.72" />
+          </div>
+        </div>
       </div>
       <div class="np-right">
         <div class="np-tabs">
@@ -149,6 +157,6 @@
   </div>
   <audio id="audio"></audio>
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=20260721-17"></script>
+  <script src="app.js?v=20260721-22"></script>
 </body>
 </html>

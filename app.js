@@ -348,6 +348,25 @@ function renderLyricLines() {
   });
 }
 
+// 自写平滑滚动：浏览器的 scroll-behavior:smooth / scrollTo({behavior}) 在部分环境不生效，改用 RAF
+function smoothScrollTop(el, target) {
+  const start = el.scrollTop;
+  const dist = target - start;
+  if (Math.abs(dist) < 2 || document.hidden) { el.scrollTop = target; return; }
+  const duration = 380;
+  const t0 = performance.now();
+  el.__scrollToken = (el.__scrollToken || 0) + 1;
+  const token = el.__scrollToken;
+  const step = (now) => {
+    if (el.__scrollToken !== token) return;
+    const p = Math.min(1, (now - t0) / duration);
+    const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+    el.scrollTop = start + dist * ease;
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 function updateLyric(time) {
   if (!lyricLines.length) return;
   let target = -1;
@@ -363,7 +382,7 @@ function updateLyric(time) {
     if (!el) return;
     el.classList.add("active");
     if (boxIsVisible(box)) {
-      box.scrollTo({ top: el.offsetTop - box.clientHeight / 2 + el.clientHeight / 2, behavior: "smooth" });
+      smoothScrollTop(box, el.offsetTop - box.clientHeight / 2 + el.clientHeight / 2);
     }
   });
 }
@@ -760,27 +779,44 @@ audio.addEventListener("error", () => toast("这首音乐暂时无法播放，�
 $("#progressBar").addEventListener("input", (event) => {
   if (audio.duration) audio.currentTime = Number(event.target.value) / 100 * audio.duration;
 });
-$("#volumeBar").addEventListener("input", (event) => { audio.volume = Number(event.target.value); });
+function setVolume(value) {
+  const v = Math.min(1, Math.max(0, Number(value)));
+  audio.volume = v;
+  if (audio.muted && v > 0) { audio.muted = false; reflectMute(); }
+  $("#volumeBar").value = v;
+  if ($("#npVolume")) $("#npVolume").value = v;
+}
+function reflectMute() {
+  const icon = audio.muted || audio.volume === 0 ? "×" : "◖";
+  $("#muteBtn").textContent = icon;
+  if ($("#npMute")) $("#npMute").textContent = icon;
+}
+$("#volumeBar").addEventListener("input", (event) => setVolume(event.target.value));
+if ($("#npVolume")) $("#npVolume").addEventListener("input", (event) => setVolume(event.target.value));
+if ($("#npMute")) $("#npMute").addEventListener("click", () => { audio.muted = !audio.muted; reflectMute(); });
 ["#playBtn", "#sidePlay"].forEach((selector) => $(selector).addEventListener("click", togglePlay));
 ["#nextBtn", "#sideNext"].forEach((selector) => $(selector).addEventListener("click", nextTrack));
 ["#prevBtn", "#sidePrev"].forEach((selector) => $(selector).addEventListener("click", previousTrack));
 $("#heroPlay").addEventListener("click", () => loadTrack(0, true));
 $("#shuffleAll").addEventListener("click", () => { shuffle = true; nextTrack(); toast("已开启随机播放"); });
 
+const SHUFFLE_BTNS = ["#shuffleBtn", "#sideShuffle", "#npShuffle"];
+const REPEAT_BTNS = ["#repeatBtn", "#sideRepeat", "#npRepeat"];
+
 function toggleShuffle() {
   shuffle = !shuffle;
-  ["#shuffleBtn", "#sideShuffle"].forEach((selector) => { $(selector).style.color = shuffle ? "#c4b5fd" : ""; });
+  SHUFFLE_BTNS.forEach((selector) => { if ($(selector)) $(selector).style.color = shuffle ? "#c4b5fd" : ""; });
   toast(shuffle ? "已开启随机播放" : "已关闭随机播放");
 }
 
 function toggleRepeat() {
   repeat = !repeat;
-  ["#repeatBtn", "#sideRepeat"].forEach((selector) => { $(selector).style.color = repeat ? "#c4b5fd" : ""; });
+  REPEAT_BTNS.forEach((selector) => { if ($(selector)) $(selector).style.color = repeat ? "#c4b5fd" : ""; });
   toast(repeat ? "已开启单曲循环" : "已关闭单曲循环");
 }
 
-["#shuffleBtn", "#sideShuffle"].forEach((selector) => $(selector).addEventListener("click", toggleShuffle));
-["#repeatBtn", "#sideRepeat"].forEach((selector) => $(selector).addEventListener("click", toggleRepeat));
+SHUFFLE_BTNS.forEach((selector) => { if ($(selector)) $(selector).addEventListener("click", toggleShuffle); });
+REPEAT_BTNS.forEach((selector) => { if ($(selector)) $(selector).addEventListener("click", toggleRepeat); });
 
 function toggleLike() {
   toggleLikeFor(tracks[index]);
@@ -798,7 +834,7 @@ $("#editTitle").addEventListener("keydown", (event) => { if (event.key === "Ente
 $("#editArtist").addEventListener("keydown", (event) => { if (event.key === "Enter") saveEdit(); });
 $("#muteBtn").addEventListener("click", () => {
   audio.muted = !audio.muted;
-  $("#muteBtn").textContent = audio.muted ? "×" : "◖";
+  reflectMute();
 });
 $("#clearQueue").addEventListener("click", () => {
   if (!tracks.length) return;
