@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Pine Music" />
-  <link rel="stylesheet" href="styles.css?v=20260721-29" />
+  <link rel="stylesheet" href="styles.css?v=20260721-30" />
 </head>
 <body>
   <div class="app-shell">
@@ -24,18 +24,18 @@
       </div>
       <div class="sidebar-title flush">我的音乐</div>
       <nav class="sub-nav">
-        <button id="navAll" class="nav-item active"><span>◉</span>全部歌曲</button>
-        <button id="navLiked" class="nav-item"><span>♥</span>我喜欢的音乐</button>
-        <label class="nav-item upload-entry" for="filePicker"><span>⇧</span>上传云端音乐</label>
+        <button id="navAll" class="nav-item active"><span class="nav-ico" data-icon="all"></span>全部歌曲</button>
+        <button id="navLiked" class="nav-item"><span class="nav-ico" data-icon="heartOutline"></span>我喜欢的音乐</button>
+        <label class="nav-item upload-entry" for="filePicker"><span class="nav-ico" data-icon="upload"></span>上传云端音乐</label>
         <input id="filePicker" type="file" accept="audio/mpeg,audio/mp4,audio/wav,audio/ogg,audio/aac,audio/flac,.mp3,.m4a,.wav,.ogg,.aac,.flac" multiple hidden />
       </nav>
-      <div class="sidebar-title playlist-head">我的歌单<button id="createPlaylistBtn" class="pl-add" aria-label="新建歌单">＋</button></div>
+      <div class="sidebar-title playlist-head">我的歌单<button id="createPlaylistBtn" class="pl-add" data-icon="plus" aria-label="新建歌单"></button></div>
       <nav id="playlistNav" class="playlist-nav"></nav>
     </aside>
     <main class="content">
       <header class="topbar">
         <div class="search-box">
-          <span>⌕</span>
+          <span class="search-ico" data-icon="search"></span>
           <input id="searchInput" placeholder="搜索歌曲、歌手" />
           <kbd>⌘ K</kbd>
         </div>
@@ -47,8 +47,8 @@
           <h1>听见 · 好时光</h1>
           <p>发现属于你的音乐宇宙，收藏每一段情绪。</p>
           <div class="hero-actions">
-            <button class="primary" id="heroPlay">▶ 立即播放</button>
-            <button class="ghost" id="shuffleAll">随机播放</button>
+            <button class="primary" id="heroPlay"><span class="btn-ico" data-icon="play"></span>立即播放</button>
+            <button class="ghost" id="shuffleAll"><span class="btn-ico" data-icon="shuffle"></span>随机播放</button>
           </div>
         </div>
         <div class="hero-art">
@@ -77,7 +77,7 @@
       <div id="sideCover" class="side-cover cover-purple"><div class="moon">◔</div></div>
       <div class="side-track-row">
         <div><h3 id="sideTitle">夜行列车</h3><p id="sideArtist">Pine Studio</p></div>
-        <button id="heartBtn" class="heart">♥</button>
+        <button id="heartBtn" class="heart" data-icon="heartOutline" aria-label="喜欢"></button>
       </div>
       <div class="side-progress">
         <div class="progress-track" id="sideSeek"><span id="sideProgressFill"></span></div>
@@ -97,20 +97,20 @@
       <div class="player-song">
         <div id="bottomCover" class="bottom-cover cover-purple"></div>
         <div class="player-song-text"><strong id="bottomTitle">夜行列车</strong><span id="bottomArtist">Pine Studio</span></div>
-        <button id="bottomHeart" class="bottom-heart">♡</button>
+        <button id="bottomHeart" class="bottom-heart" data-icon="heartOutline" aria-label="喜欢"></button>
       </div>
       <div class="player-center">
         <div class="player-buttons">
-          <button id="shuffleBtn">⤨</button><button id="prevBtn">|◀</button><button id="playBtn" class="main-play">▶</button><button id="nextBtn">▶|</button><button id="repeatBtn">↻</button>
+          <button id="shuffleBtn" data-icon="shuffle" aria-label="随机"></button><button id="prevBtn" data-icon="backward" aria-label="上一首"></button><button id="playBtn" class="main-play" data-icon="play" aria-label="播放/暂停"></button><button id="nextBtn" data-icon="forward" aria-label="下一首"></button><button id="repeatBtn" data-icon="repeat" aria-label="循环"></button>
         </div>
         <div class="bottom-progress-wrap"><span id="currentTime">00:00</span><input id="progressBar" type="range" min="0" max="100" value="0" /><span id="durationTime">00:00</span></div>
       </div>
-      <div class="player-extra"><button id="muteBtn">◖</button><input id="volumeBar" type="range" min="0" max="1" step="0.01" value="0.72" /><button id="bottomQueueBtn" aria-label="播放队列">☰</button></div>
+      <div class="player-extra"><button id="muteBtn" data-icon="volume" aria-label="静音"></button><input id="volumeBar" type="range" min="0" max="1" step="0.01" value="0.72" /><button id="bottomQueueBtn" data-icon="list" aria-label="播放队列"></button></div>
     </footer>
   </div>
   <div id="nowPlaying" class="now-playing" hidden>
     <div id="npBg" class="np-bg"></div>
-    <button id="npClose" class="np-close" aria-label="关闭全屏">✕</button>
+    <button id="npClose" class="np-close" data-icon="close" aria-label="关闭全屏"></button>
     <div class="np-inner">
       <div class="np-side">
         <div id="npCover" class="np-cover cover-purple"></div>
@@ -119,22 +119,22 @@
             <h2 id="npTitle">—</h2>
             <p id="npArtist">—</p>
           </div>
-          <button id="npHeart" class="np-heart" aria-label="喜欢">♡</button>
+          <button id="npHeart" class="np-heart" data-icon="heartOutline" aria-label="喜欢"></button>
         </div>
         <div class="np-progress">
           <div class="progress-track"><span id="npProgressFill"></span></div>
           <div class="time-row"><span id="npCurrent">00:00</span><span id="npDuration">00:00</span></div>
         </div>
         <div class="np-controls">
-          <button id="npPrev" aria-label="上一首">|◀</button>
-          <button id="npPlay" class="np-play" aria-label="播放/暂停">▶</button>
-          <button id="npNext" aria-label="下一首">▶|</button>
+          <button id="npPrev" data-icon="backward" aria-label="上一首"></button>
+          <button id="npPlay" class="np-play" data-icon="play" aria-label="播放/暂停"></button>
+          <button id="npNext" data-icon="forward" aria-label="下一首"></button>
         </div>
         <div class="np-controls-2">
-          <button id="npRepeat" aria-label="单曲循环">↻</button>
-          <button id="npShuffle" aria-label="随机播放">⤨</button>
+          <button id="npRepeat" data-icon="repeat" aria-label="单曲循环"></button>
+          <button id="npShuffle" data-icon="shuffle" aria-label="随机播放"></button>
           <div class="np-volume">
-            <button id="npMute" aria-label="静音">◖</button>
+            <button id="npMute" data-icon="volume" aria-label="静音"></button>
             <input id="npVolume" type="range" min="0" max="1" step="0.01" value="0.72" />
           </div>
         </div>
@@ -163,6 +163,6 @@
   </div>
   <audio id="audio"></audio>
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=20260721-29"></script>
+  <script src="app.js?v=20260721-30"></script>
 </body>
 </html>

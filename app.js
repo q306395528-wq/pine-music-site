@@ -38,6 +38,33 @@ const fallbackTracks = [
 
 const $ = (selector) => document.querySelector(selector);
 const audio = $("#audio");
+
+// 苹果风格 SVG 图标（SF Symbols 风）；用 currentColor 继承按钮颜色，1em 随字号缩放
+const ICONS = {
+  play: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M7.5 4.8v14.4a1 1 0 0 0 1.53.85l11.2-7.2a1 1 0 0 0 0-1.7L9.03 3.95A1 1 0 0 0 7.5 4.8Z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.2 4.2A1.6 1.6 0 0 0 6.6 5.8v12.4a1.6 1.6 0 0 0 3.2 0V5.8A1.6 1.6 0 0 0 8.2 4.2Zm7.6 0a1.6 1.6 0 0 0-1.6 1.6v12.4a1.6 1.6 0 0 0 3.2 0V5.8a1.6 1.6 0 0 0-1.6-1.6Z"/></svg>',
+  backward: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 5.6a1 1 0 0 1 2 0v4.5l9.4-5.7A1 1 0 0 1 19 5.2v13.6a1 1 0 0 1-1.6.85L8 13.9v4.5a1 1 0 0 1-2 0Z"/></svg>',
+  forward: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M18 5.6a1 1 0 0 0-2 0v4.5L6.6 4.4A1 1 0 0 0 5 5.2v13.6a1 1 0 0 0 1.6.85L16 13.9v4.5a1 1 0 0 0 2 0Z"/></svg>',
+  shuffle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h3.6c1 0 2 .5 2.6 1.4l4.6 6.2c.6.9 1.6 1.4 2.6 1.4H21"/><path d="M3 18h3.6c1 0 2-.5 2.6-1.4l.9-1.2"/><path d="M14 8.6l.8-1.2c.6-.9 1.6-1.4 2.6-1.4H21"/><path d="m18.5 3 2.5 3-2.5 3"/><path d="m18.5 12 2.5 3-2.5 3"/></svg>',
+  repeat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2.5 3 3-3 3"/><path d="M20 5.5H8.5A4.5 4.5 0 0 0 4 10v.8"/><path d="m7 21.5-3-3 3-3"/><path d="M4 18.5h11.5A4.5 4.5 0 0 0 20 14v-.8"/></svg>',
+  volume: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" stroke="none" d="M4 9.5v5h3.5L13 19V5L7.5 9.5Z"/><path d="M16.5 8.8a4.5 4.5 0 0 1 0 6.4"/><path d="M19 6a8 8 0 0 1 0 12"/></svg>',
+  muted: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" stroke="none" d="M4 9.5v5h3.5L13 19V5L7.5 9.5Z"/><path d="m17 9.5 5 5M22 9.5l-5 5"/></svg>',
+  list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h11"/></svg>',
+  heart: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 20.7 4.3 13a4.7 4.7 0 0 1 6.65-6.65l1.05 1.05 1.05-1.05A4.7 4.7 0 0 1 19.7 13Z"/></svg>',
+  heartOutline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 20.2 4.75 13a4.35 4.35 0 0 1 6.15-6.15l1.1 1.1 1.1-1.1A4.35 4.35 0 0 1 19.25 13Z"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18.4 9.6a1.9 1.9 0 0 0-2.7-2.7L5 17.6Z"/><path d="m13.5 6.5 2.7 2.7"/></svg>',
+  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-3.8-3.8"/></svg>',
+  all: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l11-2v12" fill="none"/><circle cx="6" cy="18" r="2.6" fill="currentColor" stroke="none"/><circle cx="17" cy="16" r="2.6" fill="currentColor" stroke="none"/></svg>',
+  upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4"/><path d="m7.5 8.5 4.5-4.5 4.5 4.5"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>',
+  playlist: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h11M4 12h11M4 17h7"/><circle cx="18" cy="16" r="2.4" fill="currentColor" stroke="none"/><path d="M20.4 16V9l-3 1" stroke-linejoin="round"/></svg>',
+};
+function iconMarkup(name) { return ICONS[name] || ""; }
+function applyIcons(root) {
+  (root || document).querySelectorAll("[data-icon]").forEach((el) => { el.innerHTML = iconMarkup(el.dataset.icon); });
+}
+
 let tracks = [...fallbackTracks];
 let index = 0;
 let shuffle = false;
@@ -587,10 +614,10 @@ function renderSongs(query = "") {
         const liked = isLiked(track);
         return `<article class="recommend-card" data-index="${i}">
         <div class="card-cover ${escapeHtml(track.cover)}">
-          <button class="card-like ${liked ? "liked" : ""}" data-index="${i}" aria-label="喜欢">${liked ? "♥" : "♡"}</button>
-          <button class="card-edit" data-index="${i}" aria-label="编辑信息" title="编辑歌名/歌手">✎</button>
-          <button class="card-add" data-index="${i}" aria-label="加入歌单" title="加入歌单">＋</button>
-          <button class="play-chip" aria-label="播放">▶</button>
+          <button class="card-like ${liked ? "liked" : ""}" data-index="${i}" aria-label="喜欢">${liked ? iconMarkup("heart") : iconMarkup("heartOutline")}</button>
+          <button class="card-edit" data-index="${i}" aria-label="编辑信息" title="编辑歌名/歌手">${iconMarkup("edit")}</button>
+          <button class="card-add" data-index="${i}" aria-label="加入歌单" title="加入歌单">${iconMarkup("plus")}</button>
+          <button class="play-chip" aria-label="播放">${iconMarkup("play")}</button>
         </div>
         <div class="card-meta"><strong>${escapeHtml(track.title)}</strong><span>${escapeHtml(track.artist)} · ${escapeHtml(track.genre)}</span></div>
       </article>`;
@@ -645,10 +672,10 @@ function renderGuess() {
         const liked = isLiked(track);
         return `<article class="recommend-card" data-index="${i}">
         <div class="card-cover ${escapeHtml(track.cover)}">
-          <button class="card-like ${liked ? "liked" : ""}" data-index="${i}" aria-label="喜欢">${liked ? "♥" : "♡"}</button>
-          <button class="card-edit" data-index="${i}" aria-label="编辑信息" title="编辑歌名/歌手">✎</button>
-          <button class="card-add" data-index="${i}" aria-label="加入歌单" title="加入歌单">＋</button>
-          <button class="play-chip" aria-label="播放">▶</button>
+          <button class="card-like ${liked ? "liked" : ""}" data-index="${i}" aria-label="喜欢">${liked ? iconMarkup("heart") : iconMarkup("heartOutline")}</button>
+          <button class="card-edit" data-index="${i}" aria-label="编辑信息" title="编辑歌名/歌手">${iconMarkup("edit")}</button>
+          <button class="card-add" data-index="${i}" aria-label="加入歌单" title="加入歌单">${iconMarkup("plus")}</button>
+          <button class="play-chip" aria-label="播放">${iconMarkup("play")}</button>
         </div>
         <div class="card-meta"><strong>${escapeHtml(track.title)}</strong><span>${escapeHtml(track.artist)} · ${escapeHtml(track.genre)}</span></div>
       </article>`;
@@ -674,12 +701,13 @@ function renderGuess() {
 
 function reflectLike() {
   const on = isLiked(tracks[index]);
-  $("#bottomHeart").textContent = on ? "♥" : "♡";
-  $("#bottomHeart").style.color = on ? "#fb7185" : "";
-  $("#heartBtn").textContent = on ? "♥" : "♡";
-  $("#heartBtn").style.color = on ? "#fb7185" : "#aab2c1";
-  const np = $("#npHeart");
-  if (np) { np.textContent = on ? "♥" : "♡"; np.style.color = on ? "#fb7185" : ""; }
+  const html = on ? iconMarkup("heart") : iconMarkup("heartOutline");
+  ["#bottomHeart", "#heartBtn", "#npHeart"].forEach((sel) => {
+    const el = $(sel);
+    if (!el) return;
+    el.innerHTML = html;
+    el.classList.toggle("liked", on);
+  });
 }
 
 function toggleLikeFor(track) {
@@ -783,7 +811,7 @@ function renderPlaylistNav() {
   if (!nav) return;
   nav.innerHTML = playlists.length
     ? playlists.map((p) => `<button class="nav-item playlist-item ${viewMode === "playlist:" + p.id ? "active" : ""}" data-id="${p.id}">
-        <span class="pl-icon">≡</span><span class="pl-name">${escapeHtml(p.name)}</span><span class="pl-count">${p.files.length}</span>
+        <span class="pl-icon nav-ico">${iconMarkup("playlist")}</span><span class="pl-name">${escapeHtml(p.name)}</span><span class="pl-count">${p.files.length}</span>
       </button>`).join("")
     : '<div class="pl-empty">点上方 ＋ 新建歌单</div>';
   nav.querySelectorAll(".playlist-item").forEach((item) => {
@@ -964,15 +992,21 @@ async function uploadFiles(files) {
 }
 
 audio.volume = 0.72;
+applyIcons();
+reflectMute();
 setupMediaSession();
+function reflectPlayIcon() {
+  const html = audio.paused ? iconMarkup("play") : iconMarkup("pause");
+  ["#playBtn", "#npPlay"].forEach((sel) => { if ($(sel)) $(sel).innerHTML = html; });
+}
 audio.addEventListener("play", () => {
-  $("#playBtn").textContent = $("#npPlay").textContent = "Ⅱ";
+  reflectPlayIcon();
   if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
   updateMediaSession();
   updatePositionState();
 });
 audio.addEventListener("pause", () => {
-  $("#playBtn").textContent = $("#npPlay").textContent = "▶";
+  reflectPlayIcon();
   if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
 });
 audio.addEventListener("loadedmetadata", () => {
@@ -1005,9 +1039,8 @@ function setVolume(value) {
   if ($("#npVolume")) $("#npVolume").value = v;
 }
 function reflectMute() {
-  const icon = audio.muted || audio.volume === 0 ? "×" : "◖";
-  $("#muteBtn").textContent = icon;
-  if ($("#npMute")) $("#npMute").textContent = icon;
+  const html = audio.muted || audio.volume === 0 ? iconMarkup("muted") : iconMarkup("volume");
+  ["#muteBtn", "#npMute"].forEach((sel) => { if ($(sel)) $(sel).innerHTML = html; });
 }
 $("#volumeBar").addEventListener("input", (event) => setVolume(event.target.value));
 if ($("#npVolume")) $("#npVolume").addEventListener("input", (event) => setVolume(event.target.value));
