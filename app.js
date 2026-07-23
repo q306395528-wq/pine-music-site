@@ -631,7 +631,7 @@ function renderSongs(query = "") {
           <button class="card-add" data-index="${i}" aria-label="加入歌单" title="加入歌单">${iconMarkup("plus")}</button>
           <button class="play-chip" aria-label="播放">${iconMarkup("play")}</button>
         </div>
-        <div class="card-meta"><strong>${escapeHtml(track.title)}</strong><span>${escapeHtml(track.artist)} · ${escapeHtml(track.genre)}</span></div>
+        <div class="card-meta"><strong>${escapeHtml(track.title)}</strong><span>${escapeHtml(track.artist)}${track.genre && track.genre !== "云端音乐" ? " · " + escapeHtml(track.genre) : ""}</span></div>
       </article>`;
       }).join("")
     : `<div class="empty-state">${emptyText}</div>`;
@@ -689,7 +689,7 @@ function renderGuess() {
           <button class="card-add" data-index="${i}" aria-label="加入歌单" title="加入歌单">${iconMarkup("plus")}</button>
           <button class="play-chip" aria-label="播放">${iconMarkup("play")}</button>
         </div>
-        <div class="card-meta"><strong>${escapeHtml(track.title)}</strong><span>${escapeHtml(track.artist)} · ${escapeHtml(track.genre)}</span></div>
+        <div class="card-meta"><strong>${escapeHtml(track.title)}</strong><span>${escapeHtml(track.artist)}${track.genre && track.genre !== "云端音乐" ? " · " + escapeHtml(track.genre) : ""}</span></div>
       </article>`;
       }).join("")
     : '<div class="empty-state">上传更多歌曲，这里会给你惊喜</div>';
