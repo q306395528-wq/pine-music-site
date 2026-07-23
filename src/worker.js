@@ -1,5 +1,6 @@
 const MUSIC_PREFIX = "pine-music/";
 const OVERRIDES_KEY = "meta-overrides.json";
+const PLAYLISTS_KEY = "playlists.json";
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 const AUDIO_EXTENSIONS = new Set(["mp3", "m4a", "wav", "ogg", "aac", "flac"]);
 const LRC_UA = "PineMusic/1.0 (+https://pine-music-site.q306395528.workers.dev)";
@@ -131,6 +132,40 @@ async function handleMeta(request, env) {
     httpMetadata: { contentType: "application/json; charset=utf-8" },
   });
   return json({ success: true });
+}
+
+async function loadPlaylists(env) {
+  try {
+    const object = await env.MUSIC_BUCKET.get(PLAYLISTS_KEY);
+    if (!object) return [];
+    const data = JSON.parse(await object.text());
+    return Array.isArray(data) ? data : (Array.isArray(data.playlists) ? data.playlists : []);
+  } catch {
+    return [];
+  }
+}
+
+async function handlePlaylistsSave(request, env) {
+  if (!env.UPLOAD_PASSWORD) return json({ error: "尚未设置上传密码 UPLOAD_PASSWORD" }, 503);
+  const password = request.headers.get("x-upload-password") || "";
+  if (password !== env.UPLOAD_PASSWORD) return json({ error: "密码错误" }, 401);
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "请求格式错误" }, 400);
+  }
+  const input = Array.isArray(body.playlists) ? body.playlists : [];
+  const clean = input.slice(0, 200).map((p) => ({
+    id: String(p && p.id || "").slice(0, 40),
+    name: String(p && p.name || "歌单").slice(0, 60),
+    files: Array.isArray(p && p.files) ? p.files.slice(0, 3000).map((f) => String(f).slice(0, 300)) : [],
+    created: Number(p && p.created) || Date.now(),
+  })).filter((p) => p.id && p.name);
+  await env.MUSIC_BUCKET.put(PLAYLISTS_KEY, JSON.stringify(clean), {
+    httpMetadata: { contentType: "application/json; charset=utf-8" },
+  });
+  return json({ success: true, playlists: clean });
 }
 
 async function handleUpload(request, env) {
@@ -308,6 +343,12 @@ export default {
     }
     if (url.pathname === "/api/meta" && request.method === "POST") {
       return handleMeta(request, env);
+    }
+    if (url.pathname === "/api/playlists" && request.method === "GET") {
+      return json({ playlists: await loadPlaylists(env) });
+    }
+    if (url.pathname === "/api/playlists" && request.method === "POST") {
+      return handlePlaylistsSave(request, env);
     }
     if (url.pathname.startsWith("/api/music/") && ["GET", "HEAD"].includes(request.method)) {
       return handleMusic(request, env, url.pathname);

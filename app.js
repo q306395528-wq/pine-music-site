@@ -49,6 +49,7 @@ let activeLyric = -1;
 let lyricsToken = 0;
 let currentPanel = "queue";
 let viewMode = "all";
+let playlists = [];
 const LIKED_KEY = "pineMusicLiked";
 let likedSet = new Set();
 try { likedSet = new Set(JSON.parse(localStorage.getItem(LIKED_KEY) || "[]")); } catch (e) { /* ignore */ }
@@ -574,9 +575,12 @@ function previousTrack() {
 function renderSongs(query = "") {
   const normalizedQuery = query.toLowerCase();
   let data = tracks.filter((track) => `${track.title} ${track.artist} ${track.genre}`.toLowerCase().includes(normalizedQuery));
+  const pl = currentPlaylist();
   if (viewMode === "liked") data = data.filter(isLiked);
+  else if (pl) { const set = new Set(pl.files); data = data.filter((t) => set.has(t.file)); }
   const grid = $("#recommendGrid");
-  const emptyText = viewMode === "liked" ? "还没有喜欢的歌曲，点封面右上角的 ♡ 添加" : "没有找到匹配的音乐";
+  const emptyText = pl ? "这个歌单还没有歌，点歌曲封面左下角的 ＋ 加入"
+    : (viewMode === "liked" ? "还没有喜欢的歌曲，点封面右上角的 ♡ 添加" : "没有找到匹配的音乐");
   grid.innerHTML = data.length
     ? data.map((track) => {
         const i = tracks.indexOf(track);
@@ -585,6 +589,7 @@ function renderSongs(query = "") {
         <div class="card-cover ${escapeHtml(track.cover)}">
           <button class="card-like ${liked ? "liked" : ""}" data-index="${i}" aria-label="喜欢">${liked ? "♥" : "♡"}</button>
           <button class="card-edit" data-index="${i}" aria-label="编辑信息" title="编辑歌名/歌手">✎</button>
+          <button class="card-add" data-index="${i}" aria-label="加入歌单" title="加入歌单">＋</button>
           <button class="play-chip" aria-label="播放">▶</button>
         </div>
         <div class="card-meta"><strong>${escapeHtml(track.title)}</strong><span>${escapeHtml(track.artist)} · ${escapeHtml(track.genre)}</span></div>
@@ -616,6 +621,12 @@ function renderSongs(query = "") {
       openEditDialog(tracks[Number(btn.dataset.index)]);
     });
   });
+  grid.querySelectorAll(".card-add").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openAddToPlaylist(tracks[Number(btn.dataset.index)], btn);
+    });
+  });
 }
 
 let guessTracks = [];
@@ -636,6 +647,7 @@ function renderGuess() {
         <div class="card-cover ${escapeHtml(track.cover)}">
           <button class="card-like ${liked ? "liked" : ""}" data-index="${i}" aria-label="喜欢">${liked ? "♥" : "♡"}</button>
           <button class="card-edit" data-index="${i}" aria-label="编辑信息" title="编辑歌名/歌手">✎</button>
+          <button class="card-add" data-index="${i}" aria-label="加入歌单" title="加入歌单">＋</button>
           <button class="play-chip" aria-label="播放">▶</button>
         </div>
         <div class="card-meta"><strong>${escapeHtml(track.title)}</strong><span>${escapeHtml(track.artist)} · ${escapeHtml(track.genre)}</span></div>
@@ -654,6 +666,9 @@ function renderGuess() {
   });
   grid.querySelectorAll(".card-edit").forEach((btn) => {
     btn.addEventListener("click", (event) => { event.stopPropagation(); openEditDialog(tracks[Number(btn.dataset.index)]); });
+  });
+  grid.querySelectorAll(".card-add").forEach((btn) => {
+    btn.addEventListener("click", (event) => { event.stopPropagation(); openAddToPlaylist(tracks[Number(btn.dataset.index)], btn); });
   });
 }
 
@@ -739,19 +754,140 @@ async function saveEdit() {
   }
 }
 
+function currentPlaylist() {
+  if (!viewMode.startsWith("playlist:")) return null;
+  return playlists.find((p) => p.id === viewMode.slice(9)) || null;
+}
+
 function setView(mode) {
   viewMode = mode;
   const heading = $("#recommendHeading");
-  if (heading) heading.textContent = mode === "liked" ? "我喜欢的音乐" : "为你推荐";
   const kicker = $("#recommendKicker");
-  if (kicker) kicker.textContent = mode === "liked" ? "MY LIKES" : "FOR YOU";
+  const pl = mode.startsWith("playlist:") ? playlists.find((p) => p.id === mode.slice(9)) : null;
+  if (heading) heading.textContent = pl ? pl.name : (mode === "liked" ? "我喜欢的音乐" : "为你推荐");
+  if (kicker) kicker.textContent = pl ? "PLAYLIST" : (mode === "liked" ? "MY LIKES" : "FOR YOU");
   const navAll = $("#navAll");
   const navLiked = $("#navLiked");
   if (navAll) navAll.classList.toggle("active", mode === "all");
   if (navLiked) navLiked.classList.toggle("active", mode === "liked");
+  document.querySelectorAll("#playlistNav .playlist-item").forEach((item) => {
+    item.classList.toggle("active", mode === "playlist:" + item.dataset.id);
+  });
   renderSongs($("#searchInput").value);
   const content = document.querySelector(".content");
   if (content) content.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderPlaylistNav() {
+  const nav = $("#playlistNav");
+  if (!nav) return;
+  nav.innerHTML = playlists.length
+    ? playlists.map((p) => `<button class="nav-item playlist-item ${viewMode === "playlist:" + p.id ? "active" : ""}" data-id="${p.id}">
+        <span class="pl-icon">≡</span><span class="pl-name">${escapeHtml(p.name)}</span><span class="pl-count">${p.files.length}</span>
+      </button>`).join("")
+    : '<div class="pl-empty">点上方 ＋ 新建歌单</div>';
+  nav.querySelectorAll(".playlist-item").forEach((item) => {
+    item.addEventListener("click", () => setView("playlist:" + item.dataset.id));
+    item.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      deletePlaylist(item.dataset.id);
+    });
+  });
+}
+
+async function savePlaylists() {
+  let password = sessionStorage.getItem("pineMusicUploadPassword") || "";
+  if (!password) password = window.prompt("请输入密码（与上传密码相同）") || "";
+  if (!password) return false;
+  try {
+    const response = await fetch("/api/playlists", {
+      method: "POST",
+      headers: { "content-type": "application/json", "X-Upload-Password": password },
+      body: JSON.stringify({ playlists }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 401) sessionStorage.removeItem("pineMusicUploadPassword");
+      throw new Error(payload.error || `保存失败（${response.status}）`);
+    }
+    sessionStorage.setItem("pineMusicUploadPassword", password);
+    return true;
+  } catch (error) {
+    toast(error.message || "保存失败", 4000);
+    return false;
+  }
+}
+
+async function loadPlaylists() {
+  try {
+    const response = await fetch(`/api/playlists?v=${Date.now()}`, { cache: "no-store" });
+    const data = await response.json();
+    playlists = Array.isArray(data.playlists) ? data.playlists : [];
+  } catch (error) {
+    playlists = [];
+  }
+  renderPlaylistNav();
+}
+
+async function createPlaylist(withFile) {
+  const name = (window.prompt("新歌单名称") || "").trim();
+  if (!name) return;
+  const pl = { id: `pl_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, name, files: withFile ? [withFile] : [], created: Date.now() };
+  playlists.push(pl);
+  renderPlaylistNav();
+  const ok = await savePlaylists();
+  if (ok) toast(`已创建歌单「${name}」`);
+  else { playlists = playlists.filter((p) => p.id !== pl.id); renderPlaylistNav(); }
+}
+
+async function deletePlaylist(id) {
+  const pl = playlists.find((p) => p.id === id);
+  if (!pl) return;
+  if (!window.confirm(`删除歌单「${pl.name}」？（歌曲本身不会被删除）`)) return;
+  const backup = playlists;
+  playlists = playlists.filter((p) => p.id !== id);
+  if (viewMode === "playlist:" + id) setView("all");
+  renderPlaylistNav();
+  const ok = await savePlaylists();
+  if (ok) toast("已删除歌单");
+  else { playlists = backup; renderPlaylistNav(); }
+}
+
+function closeAddMenu() {
+  document.querySelectorAll(".pl-menu").forEach((m) => m.remove());
+}
+
+function openAddToPlaylist(track, anchor) {
+  closeAddMenu();
+  if (!track || !track.file) return;
+  const menu = document.createElement("div");
+  menu.className = "pl-menu";
+  menu.innerHTML = `<div class="pl-menu-title">加入歌单</div>` +
+    playlists.map((p) => {
+      const inIt = p.files.includes(track.file);
+      return `<button class="pl-menu-item ${inIt ? "on" : ""}" data-id="${p.id}"><span>${inIt ? "✓" : "＋"}</span>${escapeHtml(p.name)}</button>`;
+    }).join("") +
+    `<button class="pl-menu-item pl-menu-new" data-new="1"><span>＋</span>新建歌单…</button>`;
+  document.body.appendChild(menu);
+  const rect = anchor.getBoundingClientRect();
+  menu.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - menu.offsetWidth - 8))}px`;
+  menu.style.top = `${Math.min(rect.bottom + 6, window.innerHeight - menu.offsetHeight - 8)}px`;
+  menu.querySelectorAll(".pl-menu-item").forEach((item) => {
+    item.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      closeAddMenu();
+      if (item.dataset.new) { await createPlaylist(track.file); return; }
+      const pl = playlists.find((p) => p.id === item.dataset.id);
+      if (!pl) return;
+      const idx = pl.files.indexOf(track.file);
+      if (idx >= 0) pl.files.splice(idx, 1); else pl.files.push(track.file);
+      renderPlaylistNav();
+      if (viewMode.startsWith("playlist:")) renderSongs($("#searchInput").value);
+      const ok = await savePlaylists();
+      if (ok) toast(idx >= 0 ? "已移出歌单" : `已加入「${pl.name}」`);
+    });
+  });
+  setTimeout(() => document.addEventListener("click", closeAddMenu, { once: true }), 0);
 }
 
 function renderQueue() {
@@ -909,6 +1045,7 @@ $("#heartBtn").addEventListener("click", toggleLike);
 if ($("#npHeart")) $("#npHeart").addEventListener("click", toggleLike);
 if ($("#navAll")) $("#navAll").addEventListener("click", () => setView("all"));
 if ($("#navLiked")) $("#navLiked").addEventListener("click", () => setView("liked"));
+if ($("#createPlaylistBtn")) $("#createPlaylistBtn").addEventListener("click", () => createPlaylist());
 if ($("#guessRefresh")) $("#guessRefresh").addEventListener("click", () => { pickGuess(); renderGuess(); toast("已换一批"); });
 if ($("#bottomQueueBtn")) $("#bottomQueueBtn").addEventListener("click", () => { openNowPlaying(); switchNpPanel("queue"); });
 if ($("#sideSeek")) $("#sideSeek").addEventListener("click", (event) => {
@@ -967,4 +1104,5 @@ loadTrack(0);
 renderSongs();
 renderGuess();
 renderQueue();
+loadPlaylists();
 syncCloud({ notify: false });

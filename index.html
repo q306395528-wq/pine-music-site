@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Pine Music" />
-  <link rel="stylesheet" href="styles.css?v=20260721-28" />
+  <link rel="stylesheet" href="styles.css?v=20260721-29" />
 </head>
 <body>
   <div class="app-shell">
@@ -29,6 +29,8 @@
         <label class="nav-item upload-entry" for="filePicker"><span>⇧</span>上传云端音乐</label>
         <input id="filePicker" type="file" accept="audio/mpeg,audio/mp4,audio/wav,audio/ogg,audio/aac,audio/flac,.mp3,.m4a,.wav,.ogg,.aac,.flac" multiple hidden />
       </nav>
+      <div class="sidebar-title playlist-head">我的歌单<button id="createPlaylistBtn" class="pl-add" aria-label="新建歌单">＋</button></div>
+      <nav id="playlistNav" class="playlist-nav"></nav>
     </aside>
     <main class="content">
       <header class="topbar">
@@ -161,6 +163,6 @@
   </div>
   <audio id="audio"></audio>
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=20260721-28"></script>
+  <script src="app.js?v=20260721-29"></script>
 </body>
 </html>
