@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Pine Music" />
-  <link rel="stylesheet" href="styles.css?v=20260721-33" />
+  <link rel="stylesheet" href="styles.css?v=20260721-34" />
 </head>
 <body>
   <div class="app-shell">
@@ -109,7 +109,7 @@
     </footer>
   </div>
   <div id="nowPlaying" class="now-playing" hidden>
-    <div id="npBg" class="np-bg"></div>
+    <div id="npBg" class="np-bg"><span class="np-bg-layer np-bg-1"></span><span class="np-bg-layer np-bg-2"></span><span class="np-bg-layer np-bg-3"></span></div>
     <button id="npClose" class="np-close" data-icon="close" aria-label="关闭全屏"></button>
     <div class="np-inner">
       <div class="np-side">
@@ -163,6 +163,6 @@
   </div>
   <audio id="audio"></audio>
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=20260721-33"></script>
+  <script src="app.js?v=20260721-34"></script>
 </body>
 </html>

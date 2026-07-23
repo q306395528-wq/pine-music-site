@@ -521,7 +521,13 @@ function paintNowPlaying() {
   $("#npArtist").textContent = track.artist;
   paintCoverEl($("#npCover"), track);
   const bg = $("#npBg");
-  bg.style.backgroundImage = track.coverUrl ? `url("${track.coverUrl}")` : "";
+  if (track.coverUrl) {
+    bg.style.setProperty("--np-cover", `url("${track.coverUrl}")`);
+    bg.classList.remove("no-cover");
+  } else {
+    bg.style.removeProperty("--np-cover");
+    bg.classList.add("no-cover");
+  }
 }
 
 function openNowPlaying() {
