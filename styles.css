@@ -198,14 +198,14 @@ button:not(:disabled){transition:background .18s ease,color .18s ease,box-shadow
 .side-cover,.bottom-cover{cursor:pointer}
 .now-playing{position:fixed;inset:0;z-index:200;overflow:hidden;background:#070a10}
 .now-playing[hidden]{display:none}
-/* Apple Music 风格动态氛围背景：多层封面重度模糊，缓慢漂移/缩放/旋转 */
-.np-bg{position:absolute;inset:0;overflow:hidden;background:#0a0d14}
-.np-bg-layer{position:absolute;inset:-45%;background-image:var(--np-cover,none);background-size:cover;background-position:center;filter:blur(72px) saturate(1.9);will-change:transform;transform-origin:center;backface-visibility:hidden}
+/* Apple Music 风格动态氛围背景：多层封面重度模糊，缓慢漂移/缩放/旋转；--np-pulse 随节奏(0~1)脉动 */
+.np-bg{position:absolute;inset:0;overflow:hidden;background:#0a0d14;transform:scale(calc(1 + var(--np-pulse,0) * 0.06));transition:transform .09s ease-out;will-change:transform}
+.np-bg-layer{position:absolute;inset:-45%;background-image:var(--np-cover,none);background-size:cover;background-position:center;filter:blur(72px) saturate(calc(1.7 + var(--np-pulse,0) * 0.6)) brightness(calc(1 + var(--np-pulse,0) * 0.22));will-change:transform,opacity;transform-origin:center;backface-visibility:hidden;transition:opacity .1s linear,filter .1s linear}
 .np-bg.no-cover .np-bg-layer{background-image:none}
 .np-bg.no-cover{background:radial-gradient(circle at 30% 30%,#3b2166,#160f2b 60%,#0a0d14)}
-.np-bg-1{opacity:.75;animation:npAmbient1 24s ease-in-out infinite}
-.np-bg-2{opacity:.55;mix-blend-mode:screen;animation:npAmbient2 31s ease-in-out infinite}
-.np-bg-3{opacity:.5;animation:npAmbient3 27s ease-in-out infinite}
+.np-bg-1{opacity:calc(.6 + var(--np-pulse,0) * .32);animation:npAmbient1 24s ease-in-out infinite}
+.np-bg-2{opacity:calc(.42 + var(--np-pulse,0) * .34);mix-blend-mode:screen;animation:npAmbient2 31s ease-in-out infinite}
+.np-bg-3{opacity:calc(.4 + var(--np-pulse,0) * .3);animation:npAmbient3 27s ease-in-out infinite}
 @keyframes npAmbient1{0%,100%{transform:translate(-7%,-5%) scale(1.35) rotate(0deg)}50%{transform:translate(7%,8%) scale(1.55) rotate(9deg)}}
 @keyframes npAmbient2{0%,100%{transform:translate(9%,3%) scale(1.45) rotate(0deg)}50%{transform:translate(-9%,-9%) scale(1.7) rotate(-11deg)}}
 @keyframes npAmbient3{0%,100%{transform:translate(3%,9%) scale(1.55) rotate(5deg)}50%{transform:translate(-6%,-4%) scale(1.4) rotate(-7deg)}}

@@ -530,6 +530,52 @@ function paintNowPlaying() {
   }
 }
 
+// 音频频谱分析：让全屏背景光晕随节奏（低频鼓点）脉动
+let audioCtx = null;
+let analyser = null;
+let freqData = null;
+let ambientRAF = null;
+let pulseSmooth = 0;
+function setupAudioAnalyser() {
+  if (audioCtx) return true;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return false;
+  try {
+    audioCtx = new AC();
+    const source = audioCtx.createMediaElementSource(audio);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.78;
+    freqData = new Uint8Array(analyser.frequencyBinCount);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    return true;
+  } catch (e) {
+    audioCtx = null;
+    analyser = null;
+    return false;
+  }
+}
+function startAmbient() {
+  if (!analyser || ambientRAF) return;
+  const step = () => {
+    if (!analyser || $("#nowPlaying").hidden) {
+      ambientRAF = null;
+      $("#npBg").style.setProperty("--np-pulse", "0");
+      return;
+    }
+    analyser.getByteFrequencyData(freqData);
+    let bass = 0;
+    for (let i = 0; i < 6; i += 1) bass += freqData[i];
+    bass = bass / (6 * 255);
+    pulseSmooth += (bass - pulseSmooth) * 0.25;
+    const pulse = audio.paused ? 0 : Math.max(0, Math.min(1, (pulseSmooth - 0.16) * 1.9));
+    $("#npBg").style.setProperty("--np-pulse", pulse.toFixed(3));
+    ambientRAF = requestAnimationFrame(step);
+  };
+  ambientRAF = requestAnimationFrame(step);
+}
+
 function openNowPlaying() {
   if (!tracks.length) return;
   paintNowPlaying();
@@ -537,6 +583,7 @@ function openNowPlaying() {
   $("#nowPlaying").hidden = false;
   document.body.classList.add("np-open");
   switchNpPanel("lyrics");
+  startAmbient();
 }
 
 function closeNowPlaying() {
@@ -1022,6 +1069,10 @@ audio.addEventListener("play", () => {
   if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
   updateMediaSession();
   updatePositionState();
+  // 播放是用户手势触发的，此时初始化音频分析器最稳妥
+  setupAudioAnalyser();
+  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+  if (!$("#nowPlaying").hidden) startAmbient();
 });
 audio.addEventListener("pause", () => {
   reflectPlayIcon();
