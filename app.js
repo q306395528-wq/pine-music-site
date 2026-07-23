@@ -127,6 +127,15 @@ function saveCover(key, url) {
   coverStore[key] = url;
   try { localStorage.setItem(COVERS_KEY, JSON.stringify(coverStore)); } catch (e) { /* ignore */ }
 }
+// 把解析成功的封面地址存回服务器，之后所有设备打开 /api/songs 直接带上、零查询秒显
+function pushCoverToServer(file, url) {
+  if (!file || !url) return;
+  fetch("/api/cover-store", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ file, url }),
+  }).catch(() => { /* 失败不影响本地显示 */ });
+}
 
 // 限制并发，降低突发请求触发 iTunes 限流的概率
 let coverInFlight = 0;
@@ -209,6 +218,8 @@ function normalizeCloudSong(song, songIndex) {
     manual: !!song.manual,
     file: song.file || song.src,
     src: song.src,
+    coverUrl: song.coverUrl || null,
+    coverTried: !!song.coverUrl,
     cover: song.cover || ["cover-purple", "cover-sunset", "cover-blue"][songIndex % 3],
     durationLabel: durationStore[song.file || song.src] || (song.duration && song.duration !== "--:--" ? song.duration : "") || song.durationLabel || "--:--",
     genre: song.genre || "云端音乐",
@@ -352,6 +363,7 @@ async function ensureArtwork(track) {
   if (track.coverUrl) {
     repaintCurrentCover();
     refreshCardCovers();
+    if (track.file && /^https?:/.test(track.coverUrl)) pushCoverToServer(track.file, track.coverUrl);
   }
 }
 

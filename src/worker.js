@@ -1,6 +1,8 @@
 const MUSIC_PREFIX = "pine-music/";
 const OVERRIDES_KEY = "meta-overrides.json";
 const PLAYLISTS_KEY = "playlists.json";
+const COVERS_STORE_KEY = "covers.json";
+const COVER_HOSTS = ["mzstatic.com", "coverartarchive.org", "archive.org"];
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 const AUDIO_EXTENSIONS = new Set(["mp3", "m4a", "wav", "ogg", "aac", "flac"]);
 const LRC_UA = "PineMusic/1.0 (+https://pine-music-site.q306395528.workers.dev)";
@@ -84,20 +86,21 @@ async function listSongs(env) {
     cursor = page.truncated ? page.cursor : undefined;
   } while (cursor);
 
-  const overrides = await loadOverrides(env);
+  const [overrides, covers] = await Promise.all([loadOverrides(env), loadCoversMap(env)]);
   return objects
     .filter((object) => AUDIO_EXTENSIONS.has(extensionOf(object.key)))
     .sort((a, b) => new Date(b.uploaded || 0) - new Date(a.uploaded || 0))
     .map(songFromObject)
     .map((song) => {
+      const merged = { ...song };
       const override = overrides[song.file];
-      if (!override) return song;
-      return {
-        ...song,
-        title: override.title || song.title,
-        artist: override.artist || song.artist,
-        manual: true,
-      };
+      if (override) {
+        merged.title = override.title || song.title;
+        merged.artist = override.artist || song.artist;
+        merged.manual = true;
+      }
+      if (covers[song.file]) merged.coverUrl = covers[song.file];
+      return merged;
     });
 }
 
@@ -143,6 +146,47 @@ async function loadPlaylists(env) {
   } catch {
     return [];
   }
+}
+
+// 封面地址缓存：第一个解析成功的浏览器把地址存回，之后 /api/songs 直接带上，所有设备零查询秒显
+async function loadCoversMap(env) {
+  try {
+    const object = await env.MUSIC_BUCKET.get(COVERS_STORE_KEY);
+    if (!object) return {};
+    const data = JSON.parse(await object.text());
+    return data && typeof data === "object" && !Array.isArray(data) ? data : {};
+  } catch {
+    return {};
+  }
+}
+
+async function handleCoverStore(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "请求格式错误" }, 400);
+  }
+  const file = String(body && body.file || "").trim().slice(0, 300);
+  const url = String(body && body.url || "").trim().slice(0, 600);
+  if (!file || !url) return json({ error: "缺少字段" }, 400);
+  let host;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return json({ error: "无效地址" }, 400);
+  }
+  // 只接受已知封面来源，防止写入任意地址
+  if (!COVER_HOSTS.some((h) => host === h || host.endsWith(`.${h}`))) {
+    return json({ error: "不支持的封面来源" }, 400);
+  }
+  const covers = await loadCoversMap(env);
+  if (covers[file] === url) return json({ success: true, unchanged: true });
+  covers[file] = url;
+  await env.MUSIC_BUCKET.put(COVERS_STORE_KEY, JSON.stringify(covers), {
+    httpMetadata: { contentType: "application/json; charset=utf-8" },
+  });
+  return json({ success: true });
 }
 
 async function handlePlaylistsSave(request, env) {
@@ -343,6 +387,9 @@ export default {
     }
     if (url.pathname === "/api/meta" && request.method === "POST") {
       return handleMeta(request, env);
+    }
+    if (url.pathname === "/api/cover-store" && request.method === "POST") {
+      return handleCoverStore(request, env);
     }
     if (url.pathname === "/api/playlists" && request.method === "GET") {
       return json({ playlists: await loadPlaylists(env) });
