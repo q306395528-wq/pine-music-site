@@ -399,8 +399,13 @@ function switchNpPanel(panel) {
   $("#npTabLyrics").classList.toggle("active", !isQueue);
   $("#npTabQueue").classList.toggle("active", isQueue);
   if (isQueue) {
-    const active = $("#npQueue").querySelector(".queue-item.active");
-    if (active) active.scrollIntoView({ block: "center" });
+    // 只滚动队列容器本身，scrollIntoView 会连带滚动祖先把整个全屏页顶上去
+    const box = $("#npQueue");
+    const active = box.querySelector(".queue-item.active");
+    if (active) {
+      const target = box.scrollTop + (active.getBoundingClientRect().top - box.getBoundingClientRect().top) - box.clientHeight / 2 + active.clientHeight / 2;
+      smoothScrollTop(box, Math.max(0, target));
+    }
   } else {
     activeLyric = -1;
     updateLyric(audio.currentTime);
