@@ -721,6 +721,16 @@ function renderSongs(query = "") {
   });
 }
 
+// Fisher-Yates 洗牌：每次打开生成不同的推荐序列
+function shuffled(list) {
+  const arr = [...list];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 let guessTracks = [];
 function pickGuess() {
   const pool = tracks.filter((track) => !track.demo);
@@ -1008,7 +1018,7 @@ async function syncCloud({ notify = true } = {}) {
       if (notify) toast("云端还没有音乐");
       return;
     }
-    tracks = cloudTracks;
+    tracks = shuffled(cloudTracks);
     index = 0;
     loadTrack(0);
     renderSongs($("#searchInput").value);
