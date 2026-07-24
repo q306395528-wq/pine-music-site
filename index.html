@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Pine Music" />
-  <link rel="stylesheet" href="styles.css?v=20260721-36" />
+  <link rel="stylesheet" href="styles.css?v=20260721-37" />
 </head>
 <body>
   <div class="app-shell">
@@ -126,17 +126,15 @@
           <div class="time-row"><span id="npCurrent">00:00</span><span id="npDuration">00:00</span></div>
         </div>
         <div class="np-controls">
+          <button id="npShuffle" data-icon="shuffle" aria-label="随机播放"></button>
           <button id="npPrev" data-icon="backward" aria-label="上一首"></button>
           <button id="npPlay" class="np-play" data-icon="play" aria-label="播放/暂停"></button>
           <button id="npNext" data-icon="forward" aria-label="下一首"></button>
-        </div>
-        <div class="np-controls-2">
           <button id="npRepeat" data-icon="repeat" aria-label="单曲循环"></button>
-          <button id="npShuffle" data-icon="shuffle" aria-label="随机播放"></button>
-          <div class="np-volume">
-            <button id="npMute" data-icon="volume" aria-label="静音"></button>
-            <input id="npVolume" type="range" min="0" max="1" step="0.01" value="0.72" />
-          </div>
+        </div>
+        <div class="np-volume">
+          <button id="npMute" data-icon="volume" aria-label="静音"></button>
+          <input id="npVolume" type="range" min="0" max="1" step="0.01" value="0.72" />
         </div>
       </div>
       <div class="np-right">
@@ -163,6 +161,6 @@
   </div>
   <audio id="audio"></audio>
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=20260721-36"></script>
+  <script src="app.js?v=20260721-37"></script>
 </body>
 </html>
