@@ -213,11 +213,12 @@ button:not(:disabled){transition:background .18s ease,color .18s ease,box-shadow
 .now-playing:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,10,16,.55),rgba(7,10,16,.82));backdrop-filter:saturate(1.1)}
 .np-close{position:absolute;top:24px;right:28px;z-index:3;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.07);color:#fff;font-size:17px;cursor:pointer;backdrop-filter:blur(12px)}
 .np-close:hover{background:rgba(255,255,255,.14)}
-.np-inner{position:relative;z-index:2;height:100%;display:grid;grid-template-columns:minmax(300px,430px) 1fr;gap:88px;align-items:center;padding:56px 76px}
+/* 宽屏时整体限宽居中，避免右侧大片留白（Apple Music 的比例） */
+.np-inner{position:relative;z-index:2;height:100%;max-width:1560px;margin:0 auto;display:grid;grid-template-columns:minmax(300px,clamp(360px,26vw,470px)) 1fr;gap:clamp(56px,7vw,140px);align-items:center;padding:56px clamp(40px,6vw,110px)}
 .np-cover{width:100%;aspect-ratio:1;border-radius:16px;background-size:cover;background-position:center;box-shadow:0 34px 80px rgba(0,0,0,.6),0 0 60px rgba(139,92,246,.12)}
 .np-meta{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-top:30px}
-.np-meta h2{margin:0 0 5px;font-size:26px;font-weight:700;letter-spacing:-.01em}
-.np-meta p{margin:0;color:#a2abbb;font-size:15px}
+.np-meta h2{margin:0 0 5px;font-size:clamp(22px,1.7vw,32px);font-weight:700;letter-spacing:-.01em}
+.np-meta p{margin:0;color:#a2abbb;font-size:clamp(14px,1vw,17px)}
 .np-progress{margin-top:26px}
 /* 主控制：随机 / 上一首 / 播放 / 下一首 / 循环 —— 单行两边撑开 */
 .np-controls{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:26px;padding:0}
@@ -248,7 +249,7 @@ button:not(:disabled){transition:background .18s ease,color .18s ease,box-shadow
 .np-lyrics::-webkit-scrollbar{display:none}
 /* 歌词：左对齐、大字重（参考 Apple Music 全屏歌词） */
 .np-lyrics{text-align:left;position:relative}
-.np-lyrics p{margin:0;padding:16px 0;font-size:30px;line-height:1.3;font-weight:700;letter-spacing:-.01em;color:rgba(255,255,255,.34);transition:color .3s ease,opacity .3s ease}
+.np-lyrics p{margin:0;padding:clamp(12px,1.2vh,20px) 0;font-size:clamp(23px,2.05vw,38px);line-height:1.3;font-weight:700;letter-spacing:-.01em;color:rgba(255,255,255,.34);transition:color .3s ease,opacity .3s ease}
 .np-lyrics p.active{color:#fff}
 .np-lyrics.plain p{font-size:20px;font-weight:500;padding:9px 0;color:rgba(255,255,255,.55)}
 .np-lyrics.plain p.active{color:#fff}
