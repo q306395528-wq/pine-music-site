@@ -1107,6 +1107,7 @@ async function uploadFiles(files) {
 audio.volume = 0.72;
 applyIcons();
 reflectMute();
+["#volumeBar", "#npVolume"].forEach((sel) => { if ($(sel)) $(sel).style.setProperty("--val", "72%"); });
 setupMediaSession();
 function reflectPlayIcon() {
   const html = audio.paused ? iconMarkup("play") : iconMarkup("pause");
@@ -1135,6 +1136,7 @@ audio.addEventListener("loadedmetadata", () => {
 audio.addEventListener("timeupdate", () => {
   const progress = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
   $("#progressBar").value = progress;
+  $("#progressBar").style.setProperty("--val", `${progress}%`);
   $("#sideProgressFill").style.width = $("#npProgressFill").style.width = `${progress}%`;
   $("#currentTime").textContent = $("#sideCurrent").textContent = $("#npCurrent").textContent = fmt(audio.currentTime);
   updateLyric(audio.currentTime);
@@ -1146,14 +1148,17 @@ audio.addEventListener("ended", () => {
 audio.addEventListener("error", () => toast("这首音乐暂时无法播放，请检查文件格式"));
 
 $("#progressBar").addEventListener("input", (event) => {
+  event.target.style.setProperty("--val", `${event.target.value}%`);
   if (audio.duration) audio.currentTime = Number(event.target.value) / 100 * audio.duration;
 });
 function setVolume(value) {
   const v = Math.min(1, Math.max(0, Number(value)));
   audio.volume = v;
   if (audio.muted && v > 0) { audio.muted = false; reflectMute(); }
+  const pct = `${v * 100}%`;
   $("#volumeBar").value = v;
-  if ($("#npVolume")) $("#npVolume").value = v;
+  $("#volumeBar").style.setProperty("--val", pct);
+  if ($("#npVolume")) { $("#npVolume").value = v; $("#npVolume").style.setProperty("--val", pct); }
 }
 function reflectMute() {
   const html = audio.muted || audio.volume === 0 ? iconMarkup("muted") : iconMarkup("volume");

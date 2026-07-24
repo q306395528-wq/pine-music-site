@@ -229,7 +229,7 @@ button:not(:disabled){transition:background .18s ease,color .18s ease,box-shadow
 .np-volume{display:flex;align-items:center;gap:11px;margin-top:22px;opacity:.72;transition:opacity .2s ease}
 .np-volume:hover{opacity:1}
 .np-volume button{border:0;background:transparent;color:#9aa4b6;font-size:17px;cursor:pointer}
-.np-volume input{flex:1;accent-color:#a855f7}
+.np-volume input{flex:1}
 .np-right{min-width:0;display:flex;flex-direction:column;height:82vh}
 .np-tabs{flex:0 0 auto;display:flex;gap:22px;margin-bottom:6px}
 .np-tab{border:0;background:transparent;color:#7f899d;font-size:15px;font-weight:700;cursor:pointer;padding:6px 0}
@@ -286,9 +286,18 @@ body.np-open{overflow:hidden}
 .player-buttons button:not(.main-play):hover{color:#fff}
 #bottomQueueBtn{font-size:19px}
 #bottomQueueBtn:hover{color:#c4b5fd}
-.bottom-progress-wrap{display:flex;align-items:center;gap:10px;margin-top:7px;color:#6d7689;font-size:10px}
-.bottom-progress-wrap input,.player-extra input{accent-color:#a855f7}
+.bottom-progress-wrap{display:flex;align-items:center;gap:10px;margin-top:7px;color:#8a93a3;font-size:11px}
 .bottom-progress-wrap input{width:100%}
+/* 细窄低调的进度/音量滑块（Apple 风）：细轨道、圆点悬停/拖动才出现 */
+#progressBar,#volumeBar,#npVolume{-webkit-appearance:none;appearance:none;height:14px;background:transparent;cursor:pointer;outline:0}
+#progressBar::-webkit-slider-runnable-track,#volumeBar::-webkit-slider-runnable-track,#npVolume::-webkit-slider-runnable-track{height:3px;border-radius:3px;background:linear-gradient(to right,#a78bda 0,#a78bda var(--val,0%),rgba(255,255,255,.15) var(--val,0%))}
+#progressBar::-webkit-slider-thumb,#volumeBar::-webkit-slider-thumb,#npVolume::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;margin-top:-4.5px;border-radius:50%;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.45);opacity:0;transition:opacity .16s ease,transform .12s ease}
+#progressBar:hover::-webkit-slider-thumb,#volumeBar:hover::-webkit-slider-thumb,#npVolume:hover::-webkit-slider-thumb,#progressBar:active::-webkit-slider-thumb,#volumeBar:active::-webkit-slider-thumb,#npVolume:active::-webkit-slider-thumb{opacity:1}
+#progressBar:active::-webkit-slider-thumb,#volumeBar:active::-webkit-slider-thumb,#npVolume:active::-webkit-slider-thumb{transform:scale(1.18)}
+#progressBar::-moz-range-track,#volumeBar::-moz-range-track,#npVolume::-moz-range-track{height:3px;border-radius:3px;background:rgba(255,255,255,.15)}
+#progressBar::-moz-range-progress,#volumeBar::-moz-range-progress,#npVolume::-moz-range-progress{height:3px;border-radius:3px;background:#a78bda}
+#progressBar::-moz-range-thumb,#volumeBar::-moz-range-thumb,#npVolume::-moz-range-thumb{width:12px;height:12px;border:0;border-radius:50%;background:#fff;opacity:0;transition:opacity .16s ease}
+#progressBar:hover::-moz-range-thumb,#volumeBar:hover::-moz-range-thumb,#npVolume:hover::-moz-range-thumb{opacity:1}
 .player-extra{display:flex;align-items:center;justify-content:flex-end;gap:12px}
 .player-extra button{border:0;background:transparent;color:#b4bdcc;cursor:pointer;font-size:18px}
 .player-extra input{width:120px}
