@@ -1033,6 +1033,39 @@ async function syncCloud({ notify = true } = {}) {
   }
 }
 
+// 上传后局部刷新：只把新歌并入列表并重绘，保留当前播放的歌和进度，不打断音乐
+async function mergeCloudSongs() {
+  // 还没有云端曲目（只有试听）时，直接整体同步即可，此时没有真正在放的歌
+  if (!tracks.some((t) => !t.demo && t.file)) {
+    await syncCloud({ notify: false });
+    return 0;
+  }
+  try {
+    const response = await fetch(`/api/songs?v=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) return 0;
+    const payload = await response.json();
+    const cloud = Array.isArray(payload.songs) ? payload.songs.map(normalizeCloudSong).filter(Boolean) : [];
+    const existing = new Set(tracks.map((t) => t.file));
+    const fresh = cloud.filter((t) => t.file && !existing.has(t.file));
+    if (!fresh.length) return 0;
+    const currentFile = tracks[index] ? tracks[index].file : null;
+    tracks = tracks.concat(shuffled(fresh));
+    if (currentFile) {
+      const ni = tracks.findIndex((t) => t.file === currentFile);
+      if (ni >= 0) index = ni;
+    }
+    renderSongs($("#searchInput").value);
+    pickGuess();
+    renderGuess();
+    renderQueue();
+    setTimeout(prefetchDurations, 800);
+    return fresh.length;
+  } catch (error) {
+    console.warn("Merge upload failed", error);
+    return 0;
+  }
+}
+
 async function uploadFiles(files) {
   let password = sessionStorage.getItem("pineMusicUploadPassword") || "";
   if (!password) password = window.prompt("请输入音乐上传密码") || "";
@@ -1062,8 +1095,8 @@ async function uploadFiles(files) {
     }
   }
 
-  toast(`上传完成，共 ${uploaded} 首`);
-  await syncCloud({ notify: false });
+  const added = await mergeCloudSongs();
+  toast(added ? `上传完成，新增 ${added} 首（不影响当前播放）` : `上传完成，共 ${uploaded} 首`);
 }
 
 audio.volume = 0.72;

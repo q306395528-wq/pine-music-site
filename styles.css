@@ -249,9 +249,9 @@ button:not(:disabled){transition:background .18s ease,color .18s ease,box-shadow
 .np-lyrics::-webkit-scrollbar{display:none}
 /* 歌词：左对齐、大字重（参考 Apple Music 全屏歌词） */
 .np-lyrics{text-align:left;position:relative}
-.np-lyrics p{margin:0;padding:clamp(12px,1.2vh,20px) 0;max-width:95%;font-size:clamp(23px,2.05vw,38px);line-height:1.3;font-weight:700;letter-spacing:-.01em;color:rgba(255,255,255,.34);transform:scale(1);transform-origin:left center;transition:transform .42s cubic-bezier(.22,.9,.24,1),color .32s ease}
-/* 当前行放大提亮，唱过后自动缩回 */
-.np-lyrics p.active{color:#fff;transform:scale(1.06)}
+.np-lyrics p{margin:0;padding:clamp(12px,1.2vh,20px) 0;max-width:92%;font-size:clamp(23px,2.05vw,38px);line-height:1.3;font-weight:700;letter-spacing:-.01em;color:rgba(255,255,255,.3);transform:scale(.88);transform-origin:left center;transition:transform .45s cubic-bezier(.34,1.28,.5,1),color .32s ease}
+/* 当前行明显放大提亮（相对未唱行约 +23%），唱过后自动缩回 */
+.np-lyrics p.active{color:#fff;transform:scale(1.08)}
 .np-lyrics.plain p{font-size:20px;font-weight:500;padding:9px 0;color:rgba(255,255,255,.55)}
 .np-lyrics.plain p.active{color:#fff}
 .np-lyrics .lyrics-hint{font-size:16px;color:rgba(255,255,255,.45);padding:0}
